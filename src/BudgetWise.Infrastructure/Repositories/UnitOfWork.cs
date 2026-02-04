@@ -16,6 +16,7 @@ public sealed class UnitOfWork : IUnitOfWork
     private AccountRepository? _accounts;
     private EnvelopeRepository? _envelopes;
     private TransactionRepository? _transactions;
+    private TransactionSplitRepository? _transactionSplits;
     private BudgetPeriodRepository? _budgetPeriods;
     private EnvelopeAllocationRepository? _envelopeAllocations;
     private PayeeRepository? _payees;
@@ -28,6 +29,7 @@ public sealed class UnitOfWork : IUnitOfWork
     public IAccountRepository Accounts => _accounts ??= new AccountRepository(_connectionFactory);
     public IEnvelopeRepository Envelopes => _envelopes ??= new EnvelopeRepository(_connectionFactory);
     public ITransactionRepository Transactions => _transactions ??= new TransactionRepository(_connectionFactory);
+    public ITransactionSplitRepository TransactionSplits => _transactionSplits ??= new TransactionSplitRepository(_connectionFactory);
     public IBudgetPeriodRepository BudgetPeriods => _budgetPeriods ??= new BudgetPeriodRepository(_connectionFactory);
     public IEnvelopeAllocationRepository EnvelopeAllocations => _envelopeAllocations ??= new EnvelopeAllocationRepository(_connectionFactory);
     public IPayeeRepository Payees => _payees ??= new PayeeRepository(_connectionFactory);

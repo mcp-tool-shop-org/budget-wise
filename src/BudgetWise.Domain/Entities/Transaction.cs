@@ -22,6 +22,7 @@ public class Transaction : Entity
     public bool IsCleared { get; private set; }
     public bool IsReconciled { get; private set; }
     public bool IsApproved { get; private set; }
+    public bool IsDeleted { get; private set; }
 
     private Transaction() : base()
     {
@@ -123,11 +124,26 @@ public class Transaction : Entity
             IsApproved = true
         };
 
-        // Link the transactions
-        fromTransaction.LinkedTransactionId = toTransaction.Id;
-        toTransaction.LinkedTransactionId = fromTransaction.Id;
-
         return (fromTransaction, toTransaction);
+    }
+
+    /// <summary>
+    /// Links this transfer transaction to its counterpart.
+    /// This is typically done after persistence to satisfy FK constraints.
+    /// </summary>
+    public void LinkTo(Guid linkedTransactionId)
+    {
+        if (Type != TransactionType.Transfer)
+            throw new InvalidOperationException("Only transfers can be linked.");
+
+        if (linkedTransactionId == Guid.Empty)
+            throw new ArgumentException("Linked transaction id is required.", nameof(linkedTransactionId));
+
+        if (linkedTransactionId == Id)
+            throw new ArgumentException("Cannot link a transaction to itself.", nameof(linkedTransactionId));
+
+        LinkedTransactionId = linkedTransactionId;
+        Touch();
     }
 
     public void SetDate(DateOnly date)
@@ -197,6 +213,15 @@ public class Transaction : Entity
             throw new InvalidOperationException("Transaction must be cleared before reconciling.");
 
         IsReconciled = true;
+        Touch();
+    }
+
+    public void SoftDelete()
+    {
+        if (IsReconciled)
+            throw new InvalidOperationException("Cannot delete reconciled transaction.");
+
+        IsDeleted = true;
         Touch();
     }
 

@@ -1,0 +1,70 @@
+<Page
+    x:Class="BudgetWise.App.Views.BudgetPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Padding="24" RowDefinitions="Auto,Auto,Auto,Auto,Auto,*" RowSpacing="12">
+        <TextBlock Text="Budget" FontSize="28" FontWeight="SemiBold" />
+
+        <TextBlock Grid.Row="1" Text="{Binding YearMonthText}" FontSize="14" Opacity="0.8" />
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="Ready to Assign:" FontSize="18" />
+            <TextBlock Text="{Binding ReadyToAssignText}"
+                       FontSize="18"
+                       FontWeight="SemiBold"
+                       ToolTipService.ToolTip="Money available to budget for this month (income minus what you’ve assigned so far)." />
+        </StackPanel>
+
+        <TextBlock Grid.Row="3"
+                   Text="Assign money to envelopes to plan the month. Overspending is highlighted in red."
+                   Opacity="0.75" />
+
+        <StackPanel Grid.Row="4" Orientation="Horizontal" Spacing="8">
+            <Button Content="Auto-Assign To Goals" Command="{Binding AutoAssignToGoalsCommand}" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="5" Spacing="8">
+            <ProgressBar IsIndeterminate="True" Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+            <TextBlock Text="{Binding ErrorText}"
+                       Foreground="Tomato"
+                       TextWrapping="Wrap"
+                       Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+            <InfoBar IsOpen="{Binding ShowEmptyState}"
+                    IsClosable="False"
+                    Severity="Informational"
+                    Title="No budget categories yet"
+                    Message="Starter envelopes will appear automatically on first launch. If this still shows, restart the app or open Diagnostics." />
+
+            <Grid ColumnDefinitions="*,140,140,140" ColumnSpacing="12" Padding="4" Opacity="0.8"
+                  Visibility="{Binding EnvelopeRows, Converter={StaticResource CollectionNotEmptyToVisibilityConverter}}">
+                <TextBlock Text="Envelope" FontWeight="SemiBold" />
+                <TextBlock Grid.Column="1" Text="Available" FontWeight="SemiBold" HorizontalAlignment="Right" />
+                <TextBlock Grid.Column="2" Text="Goal" FontWeight="SemiBold" HorizontalAlignment="Right" />
+                <TextBlock Grid.Column="3" Text="Target date" FontWeight="SemiBold" HorizontalAlignment="Right" />
+            </Grid>
+
+            <ListView ItemsSource="{Binding EnvelopeRows}">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid ColumnDefinitions="*,140,140,140" ColumnSpacing="12" Padding="4">
+                            <TextBlock Text="{Binding Name}" />
+                            <StackPanel Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal" Spacing="6">
+                                <TextBlock Text="{Binding AvailableText}" Foreground="{Binding IsOverspent, Converter={StaticResource OverspentToBrushConverter}}" />
+                                <TextBlock Text="Overspent" Foreground="Tomato"
+                                           Visibility="{Binding IsOverspent, Converter={StaticResource BoolToVisibilityConverter}}" />
+                            </StackPanel>
+                            <TextBlock Grid.Column="2" Text="{Binding GoalAmountText}" HorizontalAlignment="Right" />
+                            <TextBlock Grid.Column="3" Text="{Binding GoalDateText}" HorizontalAlignment="Right" />
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+        </StackPanel>
+    </Grid>
+</Page>

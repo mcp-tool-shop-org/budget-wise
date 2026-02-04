@@ -1,0 +1,84 @@
+<Page
+    x:Class="BudgetWise.App.Views.Diagnostics.DiagnosticsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Padding="24" RowDefinitions="Auto,Auto,Auto,*" RowSpacing="12">
+        <TextBlock Text="Diagnostics" FontSize="28" FontWeight="SemiBold" />
+
+        <StackPanel Grid.Row="1" Spacing="8">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="Refresh" Command="{Binding RefreshCommand}" />
+                <Button Content="Copy diagnostics" Command="{Binding CopyDiagnosticsCommand}" />
+                <TextBlock Text="Recent engine calls (UTC)" VerticalAlignment="Center" Opacity="0.8" />
+            </StackPanel>
+
+            <TextBlock Text="Copy diagnostics creates a small text bundle you can share for support. It includes app version, basic configuration, and recent engine call metadata — not your transaction list."
+                       TextWrapping="Wrap"
+                       Opacity="0.75" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="2" Spacing="8">
+            <TextBlock Text="App" FontSize="18" FontWeight="SemiBold" />
+
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="Version:" VerticalAlignment="Center" Opacity="0.8" />
+                <TextBlock Text="{Binding AppVersionText}" VerticalAlignment="Center" FontFamily="Consolas" />
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="DB:" VerticalAlignment="Center" Opacity="0.8" />
+                <TextBlock Text="{Binding DatabasePathText}" VerticalAlignment="Center" FontFamily="Consolas" TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+
+            <TextBlock Text="XRPL" FontSize="18" FontWeight="SemiBold" />
+
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="Web3:" VerticalAlignment="Center" Opacity="0.8" />
+                <TextBlock Text="{Binding Web3StatusText}" VerticalAlignment="Center" FontFamily="Consolas" />
+                <TextBlock Text=" " />
+                <TextBlock Text="RPC:" VerticalAlignment="Center" Opacity="0.8" />
+                <TextBlock Text="{Binding XrplRpcUrlText}" VerticalAlignment="Center" FontFamily="Consolas" />
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="server_info" Command="{Binding XrplServerInfoCommand}" />
+                <TextBox Width="360"
+                         Header="Account (r...)"
+                         Text="{Binding XrplAccountAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                <Button Content="account_info" Command="{Binding XrplAccountInfoCommand}" />
+                <ProgressRing IsActive="{Binding IsXrplLoading}" Width="18" Height="18" />
+            </StackPanel>
+
+            <TextBlock Text="{Binding XrplErrorText}"
+                       Foreground="Tomato"
+                       TextWrapping="Wrap"
+                       Visibility="{Binding XrplErrorText, Converter={StaticResource StringToVisibilityConverter}}" />
+
+            <TextBox Text="{Binding XrplResultJson}"
+                     IsReadOnly="True"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     FontFamily="Consolas"
+                     Height="200"
+                     Visibility="{Binding XrplResultJson, Converter={StaticResource StringToVisibilityConverter}}" />
+        </StackPanel>
+
+        <ListView Grid.Row="3" ItemsSource="{Binding Recent}">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <Grid ColumnDefinitions="200,*,90,80,140" ColumnSpacing="12" Padding="4">
+                        <TextBlock Text="{Binding WhenUtc}" FontFamily="Consolas" />
+                        <TextBlock Grid.Column="1" Text="{Binding Operation}" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Grid.Column="2" Text="{Binding ElapsedMs}" HorizontalAlignment="Right" />
+                        <TextBlock Grid.Column="3" Text="{Binding Success}" />
+                        <TextBlock Grid.Column="4" Text="{Binding ErrorCode}" Opacity="0.8" />
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </Grid>
+</Page>

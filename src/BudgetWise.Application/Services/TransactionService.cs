@@ -28,10 +28,29 @@ public sealed class TransactionService
         var account = await _unitOfWork.Accounts.GetByIdAsync(request.AccountId, ct)
             ?? throw new InvalidOperationException($"Account {request.AccountId} not found.");
 
-        // Validate envelope if provided
-        if (request.EnvelopeId.HasValue)
+        var hasSplits = request.SplitLines is not null && request.SplitLines.Count > 0;
+
+        if (hasSplits && request.EnvelopeId.HasValue)
+            throw new InvalidOperationException("Outflow cannot specify both EnvelopeId and SplitLines.");
+
+        // Validate envelopes
+        if (hasSplits)
         {
-            var envelope = await _unitOfWork.Envelopes.GetByIdAsync(request.EnvelopeId.Value, ct)
+            foreach (var split in request.SplitLines!)
+            {
+                _ = await _unitOfWork.Envelopes.GetByIdAsync(split.EnvelopeId, ct)
+                    ?? throw new InvalidOperationException($"Envelope {split.EnvelopeId} not found.");
+            }
+
+            var splitSum = request.SplitLines!
+                .Aggregate(Money.Zero, (sum, l) => sum + l.Amount.Abs());
+
+            if (splitSum != request.Amount.Abs())
+                throw new InvalidOperationException("Split line amounts must sum to the transaction amount.");
+        }
+        else if (request.EnvelopeId.HasValue)
+        {
+            _ = await _unitOfWork.Envelopes.GetByIdAsync(request.EnvelopeId.Value, ct)
                 ?? throw new InvalidOperationException($"Envelope {request.EnvelopeId} not found.");
         }
 
@@ -40,11 +59,20 @@ public sealed class TransactionService
             request.Date,
             request.Amount,
             request.Payee,
-            request.EnvelopeId,
+            hasSplits ? null : request.EnvelopeId,
             request.Memo
         );
 
         await _unitOfWork.Transactions.AddAsync(transaction, ct);
+
+        if (hasSplits)
+        {
+            var splitEntities = request.SplitLines!
+                .Select((l, i) => TransactionSplitLine.Create(transaction.Id, l.EnvelopeId, l.Amount.Abs(), i))
+                .ToList();
+
+            await _unitOfWork.TransactionSplits.ReplaceAsync(transaction.Id, splitEntities, ct);
+        }
 
         // Update payee usage
         var payee = await _unitOfWork.Payees.GetOrCreateAsync(request.Payee, ct);
@@ -118,6 +146,12 @@ public sealed class TransactionService
         await _unitOfWork.Transactions.AddAsync(fromTx, ct);
         await _unitOfWork.Transactions.AddAsync(toTx, ct);
 
+        // Link after insert to satisfy SQLite FK constraints on LinkedTransactionId
+        fromTx.LinkTo(toTx.Id);
+        toTx.LinkTo(fromTx.Id);
+        await _unitOfWork.Transactions.UpdateAsync(fromTx, ct);
+        await _unitOfWork.Transactions.UpdateAsync(toTx, ct);
+
         // Update both account balances
         await UpdateAccountBalanceAsync(request.FromAccountId, ct);
         await UpdateAccountBalanceAsync(request.ToAccountId, ct);
@@ -138,20 +172,70 @@ public sealed class TransactionService
         if (transaction.IsReconciled)
             throw new InvalidOperationException("Cannot modify reconciled transaction.");
 
+        var existingSplits = await _unitOfWork.TransactionSplits.GetByTransactionIdAsync(transaction.Id, ct);
+        var hasExistingSplits = existingSplits.Count > 0;
+
+        if (transaction.IsTransfer)
+        {
+            if (request.SplitLines is not null)
+                throw new InvalidOperationException("Transfers cannot have splits.");
+        }
+
+        if (request.SplitLines is not null && request.SplitLines.Count > 0 && request.EnvelopeId.HasValue)
+            throw new InvalidOperationException("Cannot set EnvelopeId when SplitLines are provided.");
+
         if (request.Date.HasValue)
             transaction.SetDate(request.Date.Value);
 
         if (request.Amount.HasValue)
+        {
+            if (hasExistingSplits && request.SplitLines is null)
+                throw new InvalidOperationException("Updating amount on a split transaction requires providing SplitLines.");
+
             transaction.SetAmount(request.Amount.Value);
+        }
 
         if (request.Payee is not null)
             transaction.SetPayee(request.Payee);
 
         if (request.EnvelopeId.HasValue || request.EnvelopeId is null)
+        {
+            if (hasExistingSplits)
+                throw new InvalidOperationException("Cannot assign a split transaction to an envelope. Clear splits first.");
+
             transaction.AssignToEnvelope(request.EnvelopeId);
+        }
 
         if (request.Memo is not null)
             transaction.SetMemo(request.Memo);
+
+        if (request.SplitLines is not null)
+        {
+            if (transaction.Type != Domain.Enums.TransactionType.Outflow)
+                throw new InvalidOperationException("Splits are only supported for outflows.");
+
+            var splits = request.SplitLines
+                .Select((l, i) => TransactionSplitLine.Create(transaction.Id, l.EnvelopeId, l.Amount.Abs(), i))
+                .ToList();
+
+            var targetAmount = (request.Amount ?? transaction.AbsoluteAmount).Abs();
+            var splitSum = splits.Aggregate(Money.Zero, (sum, l) => sum + l.Amount.Abs());
+
+            if (splits.Count > 0 && splitSum != targetAmount)
+                throw new InvalidOperationException("Split line amounts must sum to the transaction amount.");
+
+            // Validate envelopes referenced by splits.
+            foreach (var split in splits)
+            {
+                _ = await _unitOfWork.Envelopes.GetByIdAsync(split.EnvelopeId, ct)
+                    ?? throw new InvalidOperationException($"Envelope {split.EnvelopeId} not found.");
+            }
+
+            // Split parent should not be envelope-assigned.
+            transaction.AssignToEnvelope(null);
+
+            await _unitOfWork.TransactionSplits.ReplaceAsync(transaction.Id, splits, ct);
+        }
 
         await _unitOfWork.Transactions.UpdateAsync(transaction, ct);
         await UpdateAccountBalanceAsync(transaction.AccountId, ct);
@@ -167,8 +251,8 @@ public sealed class TransactionService
         var transaction = await _unitOfWork.Transactions.GetByIdAsync(transactionId, ct)
             ?? throw new InvalidOperationException($"Transaction {transactionId} not found.");
 
-        if (transaction.IsReconciled)
-            throw new InvalidOperationException("Cannot delete reconciled transaction.");
+        // Domain guard (also prevents deleting reconciled transactions)
+        transaction.SoftDelete();
 
         var accountId = transaction.AccountId;
 
@@ -176,11 +260,16 @@ public sealed class TransactionService
         if (transaction.IsTransfer && transaction.LinkedTransactionId.HasValue)
         {
             var linkedAccountId = transaction.TransferAccountId!.Value;
-            await _unitOfWork.Transactions.DeleteAsync(transaction.LinkedTransactionId.Value, ct);
+            var linked = await _unitOfWork.Transactions.GetByIdAsync(transaction.LinkedTransactionId.Value, ct);
+            if (linked is not null)
+            {
+                linked.SoftDelete();
+                await _unitOfWork.Transactions.UpdateAsync(linked, ct);
+            }
             await UpdateAccountBalanceAsync(linkedAccountId, ct);
         }
 
-        await _unitOfWork.Transactions.DeleteAsync(transactionId, ct);
+        await _unitOfWork.Transactions.UpdateAsync(transaction, ct);
         await UpdateAccountBalanceAsync(accountId, ct);
     }
 
@@ -194,6 +283,10 @@ public sealed class TransactionService
     {
         var transaction = await _unitOfWork.Transactions.GetByIdAsync(transactionId, ct)
             ?? throw new InvalidOperationException($"Transaction {transactionId} not found.");
+
+        var existingSplits = await _unitOfWork.TransactionSplits.GetByTransactionIdAsync(transaction.Id, ct);
+        if (existingSplits.Count > 0)
+            throw new InvalidOperationException("Cannot assign a split transaction to an envelope.");
 
         var envelope = await _unitOfWork.Envelopes.GetByIdAsync(envelopeId, ct)
             ?? throw new InvalidOperationException($"Envelope {envelopeId} not found.");
@@ -313,20 +406,43 @@ public sealed class TransactionService
         var accountDict = accounts.ToDictionary(a => a.Id, a => a.Name);
         var envelopeDict = envelopes.ToDictionary(e => e.Id, e => e.Name);
 
-        return transactions.Select(t => new TransactionDto
+        var list = transactions.ToList();
+        var splitDict = await _unitOfWork.TransactionSplits.GetByTransactionIdsAsync(list.Select(t => t.Id).ToList(), ct);
+
+        return list.Select(t =>
         {
-            Id = t.Id,
-            AccountId = t.AccountId,
-            AccountName = accountDict.GetValueOrDefault(t.AccountId, "Unknown"),
-            EnvelopeId = t.EnvelopeId,
-            EnvelopeName = t.EnvelopeId.HasValue ? envelopeDict.GetValueOrDefault(t.EnvelopeId.Value) : null,
-            Date = t.Date,
-            Amount = t.Amount,
-            Payee = t.Payee,
-            Memo = t.Memo,
-            Type = t.Type,
-            IsCleared = t.IsCleared,
-            IsReconciled = t.IsReconciled
+            var splits = splitDict.TryGetValue(t.Id, out var lines) ? lines : Array.Empty<TransactionSplitLine>();
+            var splitDtos = splits
+                .Select(s => new TransactionSplitLineDto
+                {
+                    EnvelopeId = s.EnvelopeId,
+                    EnvelopeName = envelopeDict.GetValueOrDefault(s.EnvelopeId, "Unknown"),
+                    Amount = s.Amount,
+                    SortOrder = s.SortOrder
+                })
+                .OrderBy(s => s.SortOrder)
+                .ToList();
+
+            var envelopeName = t.EnvelopeId.HasValue ? envelopeDict.GetValueOrDefault(t.EnvelopeId.Value) : null;
+            if (splitDtos.Count > 0)
+                envelopeName = "Split";
+
+            return new TransactionDto
+            {
+                Id = t.Id,
+                AccountId = t.AccountId,
+                AccountName = accountDict.GetValueOrDefault(t.AccountId, "Unknown"),
+                EnvelopeId = t.EnvelopeId,
+                EnvelopeName = envelopeName,
+                Date = t.Date,
+                Amount = t.Amount,
+                Payee = t.Payee,
+                Memo = t.Memo,
+                Type = t.Type,
+                IsCleared = t.IsCleared,
+                IsReconciled = t.IsReconciled,
+                SplitLines = splitDtos
+            };
         }).ToList();
     }
 }

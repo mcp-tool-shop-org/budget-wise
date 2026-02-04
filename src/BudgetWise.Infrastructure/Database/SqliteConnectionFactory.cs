@@ -7,6 +7,8 @@ namespace BudgetWise.Infrastructure.Database;
 /// </summary>
 public sealed class SqliteConnectionFactory : IDisposable
 {
+    public string DatabasePath { get; }
+
     private readonly string _connectionString;
     private SqliteConnection? _connection;
     private bool _disposed;
@@ -15,6 +17,8 @@ public sealed class SqliteConnectionFactory : IDisposable
     {
         if (string.IsNullOrWhiteSpace(databasePath))
             throw new ArgumentException("Database path cannot be empty.", nameof(databasePath));
+
+        DatabasePath = databasePath;
 
         _connectionString = new SqliteConnectionStringBuilder
         {
@@ -72,6 +76,43 @@ public sealed class SqliteConnectionFactory : IDisposable
             await using var command = connection.CreateCommand();
             command.CommandText = tableScript;
             await command.ExecuteNonQueryAsync(ct);
+        }
+
+        await EnsureTransactionsSoftDeleteSupportAsync(connection, ct);
+    }
+
+    private static async Task EnsureTransactionsSoftDeleteSupportAsync(SqliteConnection connection, CancellationToken ct)
+    {
+        // If the database already existed before IsDeleted was added to the schema,
+        // CREATE TABLE IF NOT EXISTS will not apply the new column. Add it via ALTER.
+        var hasIsDeleted = false;
+
+        await using (var pragma = connection.CreateCommand())
+        {
+            pragma.CommandText = "PRAGMA table_info(Transactions);";
+            await using var reader = await pragma.ExecuteReaderAsync(ct);
+            while (await reader.ReadAsync(ct))
+            {
+                var name = reader.GetString(1);
+                if (string.Equals(name, "IsDeleted", StringComparison.OrdinalIgnoreCase))
+                {
+                    hasIsDeleted = true;
+                    break;
+                }
+            }
+        }
+
+        if (!hasIsDeleted)
+        {
+            await using var alter = connection.CreateCommand();
+            alter.CommandText = "ALTER TABLE Transactions ADD COLUMN IsDeleted INTEGER NOT NULL DEFAULT 0;";
+            await alter.ExecuteNonQueryAsync(ct);
+        }
+
+        await using (var index = connection.CreateCommand())
+        {
+            index.CommandText = "CREATE INDEX IF NOT EXISTS IX_Transactions_IsDeleted ON Transactions(IsDeleted);";
+            await index.ExecuteNonQueryAsync(ct);
         }
     }
 

@@ -8,6 +8,7 @@ public interface IUnitOfWork : IDisposable
     IAccountRepository Accounts { get; }
     IEnvelopeRepository Envelopes { get; }
     ITransactionRepository Transactions { get; }
+    ITransactionSplitRepository TransactionSplits { get; }
     IBudgetPeriodRepository BudgetPeriods { get; }
     IEnvelopeAllocationRepository EnvelopeAllocations { get; }
     IPayeeRepository Payees { get; }

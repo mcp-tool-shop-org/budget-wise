@@ -36,7 +36,7 @@ public class TransactionTests
     }
 
     [Fact]
-    public void CreateTransfer_CreatesTwoLinkedTransactions()
+    public void CreateTransfer_CreatesTwoTransferTransactions_AndLinkToEstablishesLinkage()
     {
         var fromAccount = Guid.NewGuid();
         var toAccount = Guid.NewGuid();
@@ -46,10 +46,26 @@ public class TransactionTests
 
         from.Amount.Should().Be(amount.Negate());
         to.Amount.Should().Be(amount);
-        from.LinkedTransactionId.Should().Be(to.Id);
-        to.LinkedTransactionId.Should().Be(from.Id);
+        from.LinkedTransactionId.Should().BeNull();
+        to.LinkedTransactionId.Should().BeNull();
         from.IsTransfer.Should().BeTrue();
         to.IsTransfer.Should().BeTrue();
+
+        from.LinkTo(to.Id);
+        to.LinkTo(from.Id);
+
+        from.LinkedTransactionId.Should().Be(to.Id);
+        to.LinkedTransactionId.Should().Be(from.Id);
+    }
+
+    [Fact]
+    public void LinkTo_OnNonTransfer_ThrowsException()
+    {
+        var tx = Transaction.CreateOutflow(_accountId, _today, new Money(10m), "Store");
+
+        var act = () => tx.LinkTo(Guid.NewGuid());
+
+        act.Should().Throw<InvalidOperationException>();
     }
 
     [Fact]

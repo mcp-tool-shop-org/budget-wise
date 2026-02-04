@@ -107,7 +107,7 @@ public class BudgetPeriod : Entity
     {
         var nextMonth = Month == 12 ? 1 : Month + 1;
         var nextYear = Month == 12 ? Year + 1 : Year;
-        return Create(nextYear, nextMonth, Remaining);
+        return Create(nextYear, nextMonth, ReadyToAssign);
     }
 
     public override string ToString() => $"{Year}-{Month:D2}";

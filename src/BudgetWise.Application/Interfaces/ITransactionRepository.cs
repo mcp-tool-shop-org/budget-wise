@@ -17,4 +17,11 @@ public interface ITransactionRepository : IRepository<Transaction>
     Task<Money> GetAccountBalanceAsync(Guid accountId, CancellationToken ct = default);
     Task<Money> GetAccountClearedBalanceAsync(Guid accountId, CancellationToken ct = default);
     Task<Money> GetEnvelopeSpentAsync(Guid envelopeId, DateRange range, CancellationToken ct = default);
+
+    /// <summary>
+    /// Returns income and spent totals for the given date range.
+    /// Income includes inflows only (excludes transfers).
+    /// Spent includes outflows only and is returned as a positive amount.
+    /// </summary>
+    Task<(Money Income, Money Spent)> GetTotalsForDateRangeAsync(DateRange range, CancellationToken ct = default);
 }

@@ -22,6 +22,9 @@ bld/
 *.vspscc
 *.vssscc
 
+# VS Code
+.vscode/
+
 # Rider
 .idea/
 

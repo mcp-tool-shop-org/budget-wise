@@ -16,7 +16,7 @@ public sealed class TransactionRepository : BaseRepository<Transaction>, ITransa
     public async Task<Transaction?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
         var connection = await GetConnectionAsync(ct);
-        var sql = $"SELECT * FROM {TableName} WHERE Id = @Id";
+        var sql = $"SELECT * FROM {TableName} WHERE Id = @Id AND IsDeleted = 0";
         var row = await connection.QueryFirstOrDefaultAsync(sql, new { Id = id.ToString() });
         return row is null ? null : MapToEntity(row);
     }
@@ -24,7 +24,7 @@ public sealed class TransactionRepository : BaseRepository<Transaction>, ITransa
     public async Task<IReadOnlyList<Transaction>> GetAllAsync(CancellationToken ct = default)
     {
         var connection = await GetConnectionAsync(ct);
-        var sql = $"SELECT * FROM {TableName} ORDER BY Date DESC, CreatedAt DESC";
+        var sql = $"SELECT * FROM {TableName} WHERE IsDeleted = 0 ORDER BY Date DESC, CreatedAt DESC";
         var rows = await connection.QueryAsync(sql);
         return rows.Select(MapToEntity).ToList();
     }
@@ -36,11 +36,11 @@ public sealed class TransactionRepository : BaseRepository<Transaction>, ITransa
             INSERT INTO {TableName}
             (Id, AccountId, EnvelopeId, TransferAccountId, LinkedTransactionId, Date,
              Amount, Currency, Payee, Memo, Type, IsCleared, IsReconciled, IsApproved,
-             CreatedAt, UpdatedAt)
+             IsDeleted, CreatedAt, UpdatedAt)
             VALUES
             (@Id, @AccountId, @EnvelopeId, @TransferAccountId, @LinkedTransactionId, @Date,
              @Amount, @Currency, @Payee, @Memo, @Type, @IsCleared, @IsReconciled, @IsApproved,
-             @CreatedAt, @UpdatedAt)
+             @IsDeleted, @CreatedAt, @UpdatedAt)
             """;
 
         await connection.ExecuteAsync(sql, new
@@ -59,6 +59,7 @@ public sealed class TransactionRepository : BaseRepository<Transaction>, ITransa
             IsCleared = entity.IsCleared ? 1 : 0,
             IsReconciled = entity.IsReconciled ? 1 : 0,
             IsApproved = entity.IsApproved ? 1 : 0,
+            IsDeleted = entity.IsDeleted ? 1 : 0,
             CreatedAt = ToDbString(entity.CreatedAt),
             UpdatedAt = ToDbString(entity.UpdatedAt)
         });
@@ -84,6 +85,7 @@ public sealed class TransactionRepository : BaseRepository<Transaction>, ITransa
                 IsCleared = @IsCleared,
                 IsReconciled = @IsReconciled,
                 IsApproved = @IsApproved,
+                IsDeleted = @IsDeleted,
                 UpdatedAt = @UpdatedAt
             WHERE Id = @Id
             """;
@@ -104,14 +106,26 @@ public sealed class TransactionRepository : BaseRepository<Transaction>, ITransa
             IsCleared = entity.IsCleared ? 1 : 0,
             IsReconciled = entity.IsReconciled ? 1 : 0,
             IsApproved = entity.IsApproved ? 1 : 0,
+            IsDeleted = entity.IsDeleted ? 1 : 0,
             UpdatedAt = ToDbString(entity.UpdatedAt)
+        });
+    }
+
+    public override async Task DeleteAsync(Guid id, CancellationToken ct = default)
+    {
+        var connection = await GetConnectionAsync(ct);
+        var sql = $"UPDATE {TableName} SET IsDeleted = 1, UpdatedAt = @UpdatedAt WHERE Id = @Id";
+        await connection.ExecuteAsync(sql, new
+        {
+            Id = id.ToString(),
+            UpdatedAt = ToDbString(DateTime.UtcNow)
         });
     }
 
     public async Task<IReadOnlyList<Transaction>> GetByAccountAsync(Guid accountId, CancellationToken ct = default)
     {
         var connection = await GetConnectionAsync(ct);
-        var sql = $"SELECT * FROM {TableName} WHERE AccountId = @AccountId ORDER BY Date DESC, CreatedAt DESC";
+        var sql = $"SELECT * FROM {TableName} WHERE AccountId = @AccountId AND IsDeleted = 0 ORDER BY Date DESC, CreatedAt DESC";
         var rows = await connection.QueryAsync(sql, new { AccountId = accountId.ToString() });
         return rows.Select(MapToEntity).ToList();
     }
@@ -119,7 +133,7 @@ public sealed class TransactionRepository : BaseRepository<Transaction>, ITransa
     public async Task<IReadOnlyList<Transaction>> GetByEnvelopeAsync(Guid envelopeId, CancellationToken ct = default)
     {
         var connection = await GetConnectionAsync(ct);
-        var sql = $"SELECT * FROM {TableName} WHERE EnvelopeId = @EnvelopeId ORDER BY Date DESC, CreatedAt DESC";
+        var sql = $"SELECT * FROM {TableName} WHERE EnvelopeId = @EnvelopeId AND IsDeleted = 0 ORDER BY Date DESC, CreatedAt DESC";
         var rows = await connection.QueryAsync(sql, new { EnvelopeId = envelopeId.ToString() });
         return rows.Select(MapToEntity).ToList();
     }
@@ -127,7 +141,7 @@ public sealed class TransactionRepository : BaseRepository<Transaction>, ITransa
     public async Task<IReadOnlyList<Transaction>> GetByDateRangeAsync(DateRange range, CancellationToken ct = default)
     {
         var connection = await GetConnectionAsync(ct);
-        var sql = $"SELECT * FROM {TableName} WHERE Date >= @Start AND Date <= @End ORDER BY Date DESC, CreatedAt DESC";
+        var sql = $"SELECT * FROM {TableName} WHERE IsDeleted = 0 AND Date >= @Start AND Date <= @End ORDER BY Date DESC, CreatedAt DESC";
         var rows = await connection.QueryAsync(sql, new
         {
             Start = ToDbString(range.Start),
@@ -141,7 +155,7 @@ public sealed class TransactionRepository : BaseRepository<Transaction>, ITransa
         var connection = await GetConnectionAsync(ct);
         var sql = $"""
             SELECT * FROM {TableName}
-            WHERE AccountId = @AccountId AND Date >= @Start AND Date <= @End
+            WHERE AccountId = @AccountId AND IsDeleted = 0 AND Date >= @Start AND Date <= @End
             ORDER BY Date DESC, CreatedAt DESC
             """;
         var rows = await connection.QueryAsync(sql, new
@@ -156,7 +170,7 @@ public sealed class TransactionRepository : BaseRepository<Transaction>, ITransa
     public async Task<IReadOnlyList<Transaction>> GetUnclearedAsync(Guid accountId, CancellationToken ct = default)
     {
         var connection = await GetConnectionAsync(ct);
-        var sql = $"SELECT * FROM {TableName} WHERE AccountId = @AccountId AND IsCleared = 0 ORDER BY Date DESC";
+        var sql = $"SELECT * FROM {TableName} WHERE AccountId = @AccountId AND IsDeleted = 0 AND IsCleared = 0 ORDER BY Date DESC";
         var rows = await connection.QueryAsync(sql, new { AccountId = accountId.ToString() });
         return rows.Select(MapToEntity).ToList();
     }
@@ -164,7 +178,17 @@ public sealed class TransactionRepository : BaseRepository<Transaction>, ITransa
     public async Task<IReadOnlyList<Transaction>> GetUnassignedAsync(CancellationToken ct = default)
     {
         var connection = await GetConnectionAsync(ct);
-        var sql = $"SELECT * FROM {TableName} WHERE EnvelopeId IS NULL AND Type != @TransferType ORDER BY Date DESC";
+        var sql = $"""
+            SELECT * FROM {TableName}
+            WHERE IsDeleted = 0
+              AND EnvelopeId IS NULL
+              AND Type != @TransferType
+              AND NOT EXISTS (
+                  SELECT 1 FROM TransactionSplits s
+                  WHERE s.TransactionId = {TableName}.Id
+              )
+            ORDER BY Date DESC
+            """;
         var rows = await connection.QueryAsync(sql, new { TransferType = (int)TransactionType.Transfer });
         return rows.Select(MapToEntity).ToList();
     }
@@ -172,7 +196,7 @@ public sealed class TransactionRepository : BaseRepository<Transaction>, ITransa
     public async Task<Money> GetAccountBalanceAsync(Guid accountId, CancellationToken ct = default)
     {
         var connection = await GetConnectionAsync(ct);
-        var sql = $"SELECT COALESCE(SUM(Amount), 0) FROM {TableName} WHERE AccountId = @AccountId";
+        var sql = $"SELECT COALESCE(SUM(Amount), 0) FROM {TableName} WHERE AccountId = @AccountId AND IsDeleted = 0";
         var sum = await connection.ExecuteScalarAsync<decimal>(sql, new { AccountId = accountId.ToString() });
         return new Money(sum);
     }
@@ -180,7 +204,7 @@ public sealed class TransactionRepository : BaseRepository<Transaction>, ITransa
     public async Task<Money> GetAccountClearedBalanceAsync(Guid accountId, CancellationToken ct = default)
     {
         var connection = await GetConnectionAsync(ct);
-        var sql = $"SELECT COALESCE(SUM(Amount), 0) FROM {TableName} WHERE AccountId = @AccountId AND IsCleared = 1";
+        var sql = $"SELECT COALESCE(SUM(Amount), 0) FROM {TableName} WHERE AccountId = @AccountId AND IsDeleted = 0 AND IsCleared = 1";
         var sum = await connection.ExecuteScalarAsync<decimal>(sql, new { AccountId = accountId.ToString() });
         return new Money(sum);
     }
@@ -189,18 +213,65 @@ public sealed class TransactionRepository : BaseRepository<Transaction>, ITransa
     {
         var connection = await GetConnectionAsync(ct);
         var sql = $"""
-            SELECT COALESCE(SUM(ABS(Amount)), 0) FROM {TableName}
-            WHERE EnvelopeId = @EnvelopeId
-            AND Date >= @Start AND Date <= @End
-            AND Amount < 0
+            SELECT
+                (
+                    SELECT COALESCE(SUM(ABS(t.Amount)), 0)
+                    FROM {TableName} t
+                    WHERE t.EnvelopeId = @EnvelopeId
+                      AND t.IsDeleted = 0
+                      AND t.Date >= @Start AND t.Date <= @End
+                      AND t.Amount < 0
+                      AND NOT EXISTS (
+                          SELECT 1 FROM TransactionSplits s
+                          WHERE s.TransactionId = t.Id
+                      )
+                )
+                +
+                (
+                    SELECT COALESCE(SUM(s.Amount), 0)
+                    FROM TransactionSplits s
+                    INNER JOIN {TableName} t ON t.Id = s.TransactionId
+                    WHERE s.EnvelopeId = @EnvelopeId
+                      AND t.IsDeleted = 0
+                      AND t.Date >= @Start AND t.Date <= @End
+                      AND t.Amount < 0
+                )
+            ;
             """;
+
         var sum = await connection.ExecuteScalarAsync<decimal>(sql, new
         {
             EnvelopeId = envelopeId.ToString(),
             Start = ToDbString(range.Start),
             End = ToDbString(range.End)
         });
+
         return new Money(sum);
+    }
+
+    public async Task<(Money Income, Money Spent)> GetTotalsForDateRangeAsync(DateRange range, CancellationToken ct = default)
+    {
+        var connection = await GetConnectionAsync(ct);
+
+        // Income = sum of inflows (positive amounts)
+        var incomeSql = $"SELECT COALESCE(SUM(Amount), 0) FROM {TableName} WHERE IsDeleted = 0 AND Type = @Type AND Date >= @Start AND Date <= @End";
+        var income = await connection.ExecuteScalarAsync<decimal>(incomeSql, new
+        {
+            Type = (int)TransactionType.Inflow,
+            Start = ToDbString(range.Start),
+            End = ToDbString(range.End)
+        });
+
+        // Spent = sum of outflows as a positive value
+        var spentSql = $"SELECT COALESCE(SUM(ABS(Amount)), 0) FROM {TableName} WHERE IsDeleted = 0 AND Type = @Type AND Date >= @Start AND Date <= @End";
+        var spent = await connection.ExecuteScalarAsync<decimal>(spentSql, new
+        {
+            Type = (int)TransactionType.Outflow,
+            Start = ToDbString(range.Start),
+            End = ToDbString(range.End)
+        });
+
+        return (new Money(income), new Money(spent));
     }
 
     private static Transaction MapToEntity(dynamic row)
@@ -254,6 +325,7 @@ public sealed class TransactionRepository : BaseRepository<Transaction>, ITransa
         entityType.GetProperty("IsCleared")!.SetValue(transaction, row.IsCleared == 1);
         entityType.GetProperty("IsReconciled")!.SetValue(transaction, row.IsReconciled == 1);
         entityType.GetProperty("IsApproved")!.SetValue(transaction, row.IsApproved == 1);
+        entityType.GetProperty("IsDeleted")!.SetValue(transaction, row.IsDeleted == 1);
         entityType.GetProperty("CreatedAt")!.SetValue(transaction, ToDateTime((string)row.CreatedAt));
         entityType.GetProperty("UpdatedAt")!.SetValue(transaction, ToDateTime((string)row.UpdatedAt));
 

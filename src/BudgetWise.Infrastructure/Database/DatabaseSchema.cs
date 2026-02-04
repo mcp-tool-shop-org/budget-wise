@@ -62,6 +62,7 @@ public static class DatabaseSchema
             IsCleared INTEGER NOT NULL DEFAULT 0,
             IsReconciled INTEGER NOT NULL DEFAULT 0,
             IsApproved INTEGER NOT NULL DEFAULT 1,
+            IsDeleted INTEGER NOT NULL DEFAULT 0,
             CreatedAt TEXT NOT NULL,
             UpdatedAt TEXT NOT NULL,
             FOREIGN KEY (AccountId) REFERENCES Accounts(Id),
@@ -70,9 +71,12 @@ public static class DatabaseSchema
             FOREIGN KEY (LinkedTransactionId) REFERENCES Transactions(Id)
         );
         CREATE INDEX IF NOT EXISTS IX_Transactions_AccountId ON Transactions(AccountId);
+        CREATE INDEX IF NOT EXISTS IX_Transactions_AccountId_Date ON Transactions(AccountId, Date);
         CREATE INDEX IF NOT EXISTS IX_Transactions_EnvelopeId ON Transactions(EnvelopeId);
         CREATE INDEX IF NOT EXISTS IX_Transactions_Date ON Transactions(Date);
         CREATE INDEX IF NOT EXISTS IX_Transactions_IsCleared ON Transactions(IsCleared);
+        CREATE INDEX IF NOT EXISTS IX_Transactions_IsReconciled ON Transactions(IsReconciled);
+        CREATE INDEX IF NOT EXISTS IX_Transactions_IsDeleted ON Transactions(IsDeleted);
         """;
 
     public const string CreateBudgetPeriodsTable = """
@@ -128,6 +132,24 @@ public static class DatabaseSchema
         CREATE INDEX IF NOT EXISTS IX_Payees_IsHidden ON Payees(IsHidden);
         """;
 
+    public const string CreateTransactionSplitsTable = """
+        CREATE TABLE IF NOT EXISTS TransactionSplits (
+            Id TEXT PRIMARY KEY,
+            TransactionId TEXT NOT NULL,
+            EnvelopeId TEXT NOT NULL,
+            Amount REAL NOT NULL,
+            Currency TEXT NOT NULL DEFAULT 'USD',
+            SortOrder INTEGER NOT NULL DEFAULT 0,
+            CreatedAt TEXT NOT NULL,
+            UpdatedAt TEXT NOT NULL,
+            FOREIGN KEY (TransactionId) REFERENCES Transactions(Id),
+            FOREIGN KEY (EnvelopeId) REFERENCES Envelopes(Id)
+        );
+        CREATE INDEX IF NOT EXISTS IX_TransactionSplits_TransactionId ON TransactionSplits(TransactionId);
+        CREATE INDEX IF NOT EXISTS IX_TransactionSplits_EnvelopeId ON TransactionSplits(EnvelopeId);
+        CREATE INDEX IF NOT EXISTS IX_TransactionSplits_EnvelopeId_TransactionId ON TransactionSplits(EnvelopeId, TransactionId);
+        """;
+
     public static readonly string[] AllTables =
     [
         CreateAccountsTable,
@@ -135,6 +157,7 @@ public static class DatabaseSchema
         CreateTransactionsTable,
         CreateBudgetPeriodsTable,
         CreateEnvelopeAllocationsTable,
-        CreatePayeesTable
+        CreatePayeesTable,
+        CreateTransactionSplitsTable
     ];
 }

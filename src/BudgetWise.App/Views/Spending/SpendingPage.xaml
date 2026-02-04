@@ -1,0 +1,56 @@
+<Page
+    x:Class="BudgetWise.App.Views.Spending.SpendingPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Padding="24" RowDefinitions="Auto,Auto,*" RowSpacing="12">
+        <TextBlock Text="Spending" FontSize="28" FontWeight="SemiBold" />
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="{Binding YearMonthText}" FontSize="14" Opacity="0.8" />
+            <Button Content="Refresh" Command="{Binding RefreshCommand}" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="2" Spacing="8">
+            <ProgressBar IsIndeterminate="True" Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+            <TextBlock Text="{Binding ErrorText}" Foreground="Tomato" TextWrapping="Wrap"
+                       Visibility="{Binding ErrorText, Converter={StaticResource StringToVisibilityConverter}}" />
+
+            <InfoBar IsOpen="True"
+                    IsClosable="False"
+                    Severity="Informational"
+                    Title="No spending data yet"
+                    Message="Add transactions (or import a CSV) to see spending by envelope."
+                    Visibility="{Binding Rows, Converter={StaticResource CollectionEmptyToVisibilityConverter}}" />
+
+            <Grid ColumnDefinitions="*,110,110" ColumnSpacing="12" Padding="4" Opacity="0.8"
+                  Visibility="{Binding Rows, Converter={StaticResource CollectionNotEmptyToVisibilityConverter}}">
+                <TextBlock Text="Envelope" FontWeight="SemiBold" />
+                <TextBlock Grid.Column="1" Text="Spent" FontWeight="SemiBold" HorizontalAlignment="Right" />
+                <TextBlock Grid.Column="2" Text="Available" FontWeight="SemiBold" HorizontalAlignment="Right" />
+            </Grid>
+
+            <ListView ItemsSource="{Binding Rows}">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid ColumnDefinitions="*,110,110" ColumnSpacing="12" Padding="4">
+                            <StackPanel>
+                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                <ProgressBar Minimum="0" Maximum="100" Value="{Binding SpentPercent}" Height="6" />
+                            </StackPanel>
+
+                            <TextBlock Grid.Column="1" Text="{Binding SpentText}" HorizontalAlignment="Right" />
+                            <TextBlock Grid.Column="2" Text="{Binding AvailableText}"
+                                       HorizontalAlignment="Right"
+                                       Foreground="{Binding IsOverspent, Converter={StaticResource OverspentToBrushConverter}}" />
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+        </StackPanel>
+    </Grid>
+</Page>
