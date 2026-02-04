@@ -80,6 +80,9 @@ public sealed class AppHost
         builder.Services.AddSingleton<INotificationService, NotificationService>();
         builder.Services.AddSingleton<IEngineErrorMessageMapper, EngineErrorMessageMapper>();
 
+        // App settings persistence (first-run, preferences).
+        builder.Services.AddSingleton<IAppSettingsService, AppSettingsService>();
+
         // UI
         builder.Services.AddSingleton<MainWindow>();
         builder.Services.AddTransient<BudgetViewModel>();

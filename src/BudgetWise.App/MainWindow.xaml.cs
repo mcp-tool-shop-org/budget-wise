@@ -27,6 +27,7 @@ public sealed partial class MainWindow : Window
     private readonly SqliteConnectionFactory _connectionFactory;
     private readonly Web3Options _web3Options;
     private readonly IEngineMetricsSink _sink;
+    private readonly IAppSettingsService _settings;
     private CancellationTokenSource? _dismissCts;
     private Guid _notificationId;
     private AppWindow? _appWindow;
@@ -36,12 +37,14 @@ public sealed partial class MainWindow : Window
         INotificationService notifications,
         SqliteConnectionFactory connectionFactory,
         Web3Options web3Options,
-        IEngineMetricsSink sink)
+        IEngineMetricsSink sink,
+        IAppSettingsService settings)
     {
         _notifications = notifications ?? throw new ArgumentNullException(nameof(notifications));
         _connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
         _web3Options = web3Options ?? throw new ArgumentNullException(nameof(web3Options));
         _sink = sink ?? throw new ArgumentNullException(nameof(sink));
+        _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         InitializeComponent();
 
         ConfigureWindowChrome();
@@ -50,6 +53,23 @@ public sealed partial class MainWindow : Window
 
         Nav.SelectedItem = Nav.MenuItems[0];
         RootFrame.Navigate(typeof(BudgetPage));
+
+        // Show welcome dialog on first run.
+        if (!_settings.HasCompletedWelcome)
+        {
+            _ = ShowWelcomeDialogAsync();
+        }
+    }
+
+    private async Task ShowWelcomeDialogAsync()
+    {
+        // Small delay to let the UI stabilize before showing dialog.
+        await Task.Delay(500);
+
+        WelcomeDialog.XamlRoot = Content.XamlRoot;
+        await WelcomeDialog.ShowAsync();
+
+        _settings.HasCompletedWelcome = true;
     }
 
     private void ConfigureWindowChrome()

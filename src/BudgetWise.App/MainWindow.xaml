@@ -37,5 +37,47 @@
 
             <Frame x:Name="RootFrame" />
         </NavigationView>
+
+        <ContentDialog x:Name="WelcomeDialog"
+                       Title="Welcome to BudgetWise"
+                       PrimaryButtonText="Let's get started"
+                       DefaultButton="Primary"
+                       CloseButtonText="">
+            <StackPanel Spacing="16" MaxWidth="480">
+                <TextBlock TextWrapping="Wrap">
+                    BudgetWise helps you take control of your money using envelope budgeting.
+                    Every dollar you earn gets a job—you decide what it's for before you spend it.
+                </TextBlock>
+
+                <StackPanel Spacing="8">
+                    <TextBlock Text="What we've set up for you:" FontWeight="SemiBold" />
+
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE8C7;" FontSize="16" />
+                        <TextBlock Text="A Checking account to track your balance" TextWrapping="Wrap" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE8EC;" FontSize="16" />
+                        <TextBlock Text="Starter envelopes for common spending categories" TextWrapping="Wrap" />
+                    </StackPanel>
+                </StackPanel>
+
+                <TextBlock TextWrapping="Wrap" Opacity="0.8" FontSize="13">
+                    Start by adding income to Ready to Assign, then assign dollars to your envelopes.
+                    When you spend, record it and assign it to the right envelope.
+                </TextBlock>
+
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        CornerRadius="6" Padding="12">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Quick tip" FontWeight="SemiBold" FontSize="13" />
+                        <TextBlock TextWrapping="Wrap" FontSize="13" Opacity="0.9">
+                            Click the Help button in the bottom-left corner anytime for guidance.
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ContentDialog>
     </Grid>
 </Window>
