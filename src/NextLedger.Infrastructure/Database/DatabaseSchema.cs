@@ -171,6 +171,58 @@ public static class DatabaseSchema
         CREATE INDEX IF NOT EXISTS IX_XrplBalanceSnapshots_LedgerIndex ON XrplBalanceSnapshots(LedgerIndex);
         """;
 
+    /// <summary>
+    /// Stores XRPL intents — user-expressed financial plans.
+    /// These are PLANS, not executions. NextLedger never signs or submits.
+    /// Full audit trail of intent lifecycle: Draft → Approved → Cancelled/Matched.
+    /// </summary>
+    public const string CreateXrplIntentsTable = """
+        CREATE TABLE IF NOT EXISTS XrplIntents (
+            Id TEXT PRIMARY KEY,
+            IntentType INTEGER NOT NULL,
+            Status INTEGER NOT NULL,
+
+            -- Parameters (vary by intent type)
+            SourceAccountId TEXT,
+            SourceAddress TEXT,
+            DestinationAddress TEXT,
+            AmountDrops INTEGER,
+            DestinationTag INTEGER,
+            Memo TEXT,
+            Network TEXT NOT NULL DEFAULT 'mainnet',
+
+            -- User context
+            UserNote TEXT,
+
+            -- Provenance (audit trail)
+            CreatedAt TEXT NOT NULL,
+            ApprovedAt TEXT,
+            CancelledAt TEXT,
+            MatchedAt TEXT,
+            AppVersion TEXT,
+            ActionSource TEXT,
+
+            -- Validation snapshot
+            PreviewBalanceDrops INTEGER,
+            ProjectedBalanceDrops INTEGER,
+            EstimatedFeeDrops INTEGER,
+            ReserveRequirementDrops INTEGER,
+            ValidationWarnings TEXT,
+            IsValid INTEGER NOT NULL DEFAULT 0,
+
+            -- Matching (external execution detection)
+            MatchedTransactionHash TEXT,
+            MatchedLedgerIndex INTEGER,
+
+            FOREIGN KEY (SourceAccountId) REFERENCES Accounts(Id)
+        );
+        CREATE INDEX IF NOT EXISTS IX_XrplIntents_Status ON XrplIntents(Status);
+        CREATE INDEX IF NOT EXISTS IX_XrplIntents_IntentType ON XrplIntents(IntentType);
+        CREATE INDEX IF NOT EXISTS IX_XrplIntents_SourceAccountId ON XrplIntents(SourceAccountId);
+        CREATE INDEX IF NOT EXISTS IX_XrplIntents_CreatedAt ON XrplIntents(CreatedAt);
+        CREATE INDEX IF NOT EXISTS IX_XrplIntents_Status_CreatedAt ON XrplIntents(Status, CreatedAt);
+        """;
+
     public static readonly string[] AllTables =
     [
         CreateAccountsTable,
@@ -180,6 +232,7 @@ public static class DatabaseSchema
         CreateEnvelopeAllocationsTable,
         CreatePayeesTable,
         CreateTransactionSplitsTable,
-        CreateXrplBalanceSnapshotsTable
+        CreateXrplBalanceSnapshotsTable,
+        CreateXrplIntentsTable
     ];
 }

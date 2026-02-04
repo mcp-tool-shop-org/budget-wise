@@ -834,3 +834,306 @@ public sealed record XrplBalanceSnapshot
     /// </summary>
     public decimal SpendableXrp => SpendableDrops / 1_000_000m;
 }
+
+// ============================================================================
+// XRPL Intent Layer DTOs (Phase 8)
+// Plans, not executions — NextLedger never signs or submits.
+// ============================================================================
+
+/// <summary>
+/// DTO for displaying an XRPL intent in the UI.
+/// </summary>
+public sealed record XrplIntentDto
+{
+    public required Guid Id { get; init; }
+    public required XrplIntentType IntentType { get; init; }
+    public required XrplIntentStatus Status { get; init; }
+
+    // Parameters
+    public Guid? SourceAccountId { get; init; }
+    public string? SourceAddress { get; init; }
+    public string? DestinationAddress { get; init; }
+    public long? AmountDrops { get; init; }
+    public uint? DestinationTag { get; init; }
+    public string? Memo { get; init; }
+    public required string Network { get; init; }
+
+    // User context
+    public string? UserNote { get; init; }
+
+    // Timestamps
+    public required DateTime CreatedAt { get; init; }
+    public DateTime? ApprovedAt { get; init; }
+    public DateTime? CancelledAt { get; init; }
+    public DateTime? MatchedAt { get; init; }
+
+    // Validation
+    public long? PreviewBalanceDrops { get; init; }
+    public long? ProjectedBalanceDrops { get; init; }
+    public long? EstimatedFeeDrops { get; init; }
+    public long? ReserveRequirementDrops { get; init; }
+    public string? ValidationWarnings { get; init; }
+    public bool IsValid { get; init; }
+
+    // Matching
+    public string? MatchedTransactionHash { get; init; }
+    public long? MatchedLedgerIndex { get; init; }
+
+    // Computed display properties
+    public decimal? AmountXrp => AmountDrops.HasValue ? AmountDrops.Value / 1_000_000m : null;
+    public string AmountText => AmountXrp.HasValue ? $"{AmountXrp.Value:N6} XRP" : "-";
+
+    public string StatusText => Status switch
+    {
+        XrplIntentStatus.Draft => "Draft",
+        XrplIntentStatus.Approved => "Approved",
+        XrplIntentStatus.Cancelled => "Cancelled",
+        XrplIntentStatus.Matched => "Matched",
+        _ => Status.ToString()
+    };
+
+    public string IntentTypeText => IntentType switch
+    {
+        XrplIntentType.TrackAddress => "Track Address",
+        XrplIntentType.Transfer => "Transfer",
+        XrplIntentType.Reconcile => "Reconcile",
+        XrplIntentType.BudgetFromXrp => "Budget Allocation",
+        _ => IntentType.ToString()
+    };
+
+    public string Summary { get; init; } = string.Empty;
+
+    public string TruncatedSourceAddress => TruncateAddress(SourceAddress);
+    public string TruncatedDestinationAddress => TruncateAddress(DestinationAddress);
+
+    private static string TruncateAddress(string? address)
+    {
+        if (string.IsNullOrEmpty(address) || address.Length <= 12)
+            return address ?? "-";
+        return $"{address[..6]}...{address[^4..]}";
+    }
+}
+
+/// <summary>
+/// Request to create a Transfer intent.
+/// </summary>
+public sealed record CreateTransferIntentRequest
+{
+    public required Guid SourceAccountId { get; init; }
+    public required string DestinationAddress { get; init; }
+    public required decimal AmountXrp { get; init; }
+    public uint? DestinationTag { get; init; }
+    public string? Memo { get; init; }
+    public string? UserNote { get; init; }
+
+    /// <summary>
+    /// Amount in drops for internal use.
+    /// </summary>
+    public long AmountDrops => (long)(AmountXrp * 1_000_000m);
+}
+
+/// <summary>
+/// Request to create a Reconcile intent.
+/// </summary>
+public sealed record CreateReconcileIntentRequest
+{
+    public required Guid AccountId { get; init; }
+    public string? UserNote { get; init; }
+}
+
+/// <summary>
+/// Request to create a BudgetFromXrp intent.
+/// </summary>
+public sealed record CreateBudgetFromXrpIntentRequest
+{
+    public required Guid SourceAccountId { get; init; }
+    public required decimal AmountXrp { get; init; }
+    public string? UserNote { get; init; }
+
+    public long AmountDrops => (long)(AmountXrp * 1_000_000m);
+}
+
+/// <summary>
+/// Result of intent validation with preview snapshot.
+/// The "Future Ledger" moment — showing before/after without execution.
+/// </summary>
+public sealed record IntentValidationResult
+{
+    public required bool IsValid { get; init; }
+    public required string Message { get; init; }
+    public List<string> Warnings { get; init; } = [];
+    public List<string> Errors { get; init; } = [];
+
+    // Balance preview (the "Future Ledger" snapshot)
+    public required long CurrentBalanceDrops { get; init; }
+    public required long ProjectedBalanceDrops { get; init; }
+    public required long ReserveRequirementDrops { get; init; }
+    public required long EstimatedFeeDrops { get; init; }
+
+    // Computed
+    public decimal CurrentBalanceXrp => CurrentBalanceDrops / 1_000_000m;
+    public decimal ProjectedBalanceXrp => ProjectedBalanceDrops / 1_000_000m;
+    public decimal ReserveXrp => ReserveRequirementDrops / 1_000_000m;
+    public decimal EstimatedFeeXrp => EstimatedFeeDrops / 1_000_000m;
+
+    public bool WillBeUnderReserve => ProjectedBalanceDrops < ReserveRequirementDrops;
+    public decimal SpendableAfterDrops => Math.Max(0, ProjectedBalanceDrops - ReserveRequirementDrops);
+    public decimal SpendableAfterXrp => SpendableAfterDrops / 1_000_000m;
+
+    /// <summary>
+    /// Creates a successful validation result.
+    /// </summary>
+    public static IntentValidationResult Success(
+        string message,
+        long currentBalance,
+        long projectedBalance,
+        long reserve,
+        long fee,
+        List<string>? warnings = null)
+    {
+        return new IntentValidationResult
+        {
+            IsValid = true,
+            Message = message,
+            Warnings = warnings ?? [],
+            CurrentBalanceDrops = currentBalance,
+            ProjectedBalanceDrops = projectedBalance,
+            ReserveRequirementDrops = reserve,
+            EstimatedFeeDrops = fee
+        };
+    }
+
+    /// <summary>
+    /// Creates a failed validation result.
+    /// </summary>
+    public static IntentValidationResult Failure(
+        string message,
+        List<string> errors,
+        long currentBalance,
+        long projectedBalance,
+        long reserve,
+        long fee)
+    {
+        return new IntentValidationResult
+        {
+            IsValid = false,
+            Message = message,
+            Errors = errors,
+            CurrentBalanceDrops = currentBalance,
+            ProjectedBalanceDrops = projectedBalance,
+            ReserveRequirementDrops = reserve,
+            EstimatedFeeDrops = fee
+        };
+    }
+}
+
+/// <summary>
+/// Result of creating an intent.
+/// </summary>
+public sealed record CreateIntentResult
+{
+    public required bool Success { get; init; }
+    public string? ErrorMessage { get; init; }
+    public XrplIntentDto? Intent { get; init; }
+    public IntentValidationResult? Validation { get; init; }
+
+    public static CreateIntentResult Ok(XrplIntentDto intent, IntentValidationResult validation)
+        => new() { Success = true, Intent = intent, Validation = validation };
+
+    public static CreateIntentResult Error(string message)
+        => new() { Success = false, ErrorMessage = message };
+}
+
+/// <summary>
+/// Exportable execution plan for the user to execute externally.
+/// This is what the user takes to their wallet — we don't execute it.
+/// </summary>
+public sealed record XrplExecutionPlan
+{
+    public required Guid IntentId { get; init; }
+    public required XrplIntentType IntentType { get; init; }
+    public required DateTime GeneratedAt { get; init; }
+
+    // Transaction details
+    public required string TransactionType { get; init; }
+    public required string SourceAddress { get; init; }
+    public string? DestinationAddress { get; init; }
+    public long? AmountDrops { get; init; }
+    public uint? DestinationTag { get; init; }
+    public string? Memo { get; init; }
+    public required string Network { get; init; }
+
+    // Validation snapshot
+    public required long CurrentBalanceDrops { get; init; }
+    public required long ProjectedBalanceDrops { get; init; }
+    public required long ReserveRequirementDrops { get; init; }
+    public required long EstimatedFeeDrops { get; init; }
+    public string? Warnings { get; init; }
+
+    // Display properties
+    public decimal? AmountXrp => AmountDrops.HasValue ? AmountDrops.Value / 1_000_000m : null;
+    public decimal CurrentBalanceXrp => CurrentBalanceDrops / 1_000_000m;
+    public decimal ProjectedBalanceXrp => ProjectedBalanceDrops / 1_000_000m;
+    public decimal EstimatedFeeXrp => EstimatedFeeDrops / 1_000_000m;
+
+    /// <summary>
+    /// Gets a human-readable summary for export.
+    /// </summary>
+    public string GetExportText()
+    {
+        var lines = new List<string>
+        {
+            "═══════════════════════════════════════════════════════════",
+            "  NextLedger XRPL Execution Plan",
+            "  ⚠️ This is a PLAN — execute manually in your wallet",
+            "═══════════════════════════════════════════════════════════",
+            "",
+            $"Generated: {GeneratedAt:yyyy-MM-dd HH:mm:ss UTC}",
+            $"Intent ID: {IntentId}",
+            $"Network: {Network}",
+            "",
+            "─── TRANSACTION DETAILS ───────────────────────────────────",
+            $"Type: {TransactionType}",
+            $"From: {SourceAddress}"
+        };
+
+        if (!string.IsNullOrEmpty(DestinationAddress))
+            lines.Add($"To: {DestinationAddress}");
+
+        if (AmountDrops.HasValue)
+            lines.Add($"Amount: {AmountXrp:N6} XRP ({AmountDrops} drops)");
+
+        if (DestinationTag.HasValue)
+            lines.Add($"Destination Tag: {DestinationTag}");
+
+        if (!string.IsNullOrEmpty(Memo))
+            lines.Add($"Memo: {Memo}");
+
+        lines.AddRange([
+            "",
+            "─── BALANCE PREVIEW ───────────────────────────────────────",
+            $"Current Balance:   {CurrentBalanceXrp:N6} XRP",
+            $"After Transaction: {ProjectedBalanceXrp:N6} XRP",
+            $"Estimated Fee:     {EstimatedFeeXrp:N6} XRP",
+            ""
+        ]);
+
+        if (!string.IsNullOrEmpty(Warnings))
+        {
+            lines.AddRange([
+                "─── WARNINGS ──────────────────────────────────────────────",
+                Warnings,
+                ""
+            ]);
+        }
+
+        lines.AddRange([
+            "═══════════════════════════════════════════════════════════",
+            "  NextLedger does NOT sign or submit transactions.",
+            "  Please execute this plan using your XRPL wallet.",
+            "═══════════════════════════════════════════════════════════"
+        ]);
+
+        return string.Join(Environment.NewLine, lines);
+    }
+}

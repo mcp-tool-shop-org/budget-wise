@@ -300,6 +300,84 @@
                 </StackPanel>
             </Expander>
 
+            <!-- XRPL (External Ledger) -->
+            <Expander Header="XRPL (External Ledger)" HorizontalAlignment="Stretch">
+                <StackPanel Spacing="20" Padding="8">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="What is the XRPL tab?" FontWeight="SemiBold" FontSize="16" />
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            The XRP Ledger (XRPL) tab lets you track public blockchain addresses alongside your traditional accounts.
+                        </TextBlock>
+                        <InfoBar IsOpen="True" IsClosable="False" Severity="Informational"
+                                 Title="Important"
+                                 Message="NextLedger is VIEW-ONLY for XRPL. It cannot move, send, or sign transactions — it only observes what happens on-chain." />
+                    </StackPanel>
+
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="What is the XRP Reserve?" FontWeight="SemiBold" FontSize="16" />
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            XRPL requires every account to maintain a minimum balance called the reserve:
+                        </TextBlock>
+                        <StackPanel Spacing="4" Margin="16,0,0,0">
+                            <TextBlock Text="• Base reserve: 10 XRP (to keep the account active)" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="• Owner reserve: 2 XRP per owned object (trust lines, offers, etc.)" Opacity="0.8" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8" Margin="0,8,0,0">
+                            NextLedger shows both your total balance and your spendable balance (total minus reserve).
+                        </TextBlock>
+                    </StackPanel>
+
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="What is 'Plan Transfer'?" FontWeight="SemiBold" FontSize="16" />
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            Plan Transfer lets you plan an XRP transfer before executing it. This is an INTENT, not an execution.
+                        </TextBlock>
+                        <StackPanel Spacing="4" Margin="16,0,0,0">
+                            <TextBlock Text="1. You enter where you want to send XRP and how much" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="2. NextLedger shows you what your balance will be AFTER the transfer" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="3. It warns you if you'd go below the reserve requirement" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="4. You approve the plan (which saves it for your records)" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="5. You execute the transaction in YOUR OWN WALLET" Opacity="0.8" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <InfoBar IsOpen="True" IsClosable="False" Severity="Warning"
+                                 Title="NextLedger never touches your XRP"
+                                 Message="We don't have your private keys. We can't sign transactions. You must execute plans in your own wallet (XUMM, Ledger, etc.)." />
+                    </StackPanel>
+
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="What is Intent History?" FontWeight="SemiBold" FontSize="16" />
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            Intent History is an audit trail of all your XRPL transfer plans:
+                        </TextBlock>
+                        <StackPanel Spacing="4" Margin="16,0,0,0">
+                            <TextBlock Text="• Draft: Plan created, not yet approved" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="• Approved: You acknowledged the plan" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="• Cancelled: You decided not to proceed" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="• Matched: NextLedger detected the transaction on-chain" Opacity="0.8" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8" Margin="0,8,0,0">
+                            This gives you a record of what you planned vs. what actually happened.
+                        </TextBlock>
+                    </StackPanel>
+
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Why does NextLedger do it this way?" FontWeight="SemiBold" FontSize="16" />
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            Security and control. By keeping planning and execution separate:
+                        </TextBlock>
+                        <StackPanel Spacing="4" Margin="16,0,0,0">
+                            <TextBlock Text="• Your private keys stay in your wallet" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="• You always approve transactions yourself" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="• NextLedger can't accidentally move your money" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="• You get the 'future ledger' preview without risk" Opacity="0.8" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <TextBlock TextWrapping="Wrap" FontWeight="SemiBold" Margin="0,8,0,0">
+                            You plan here. You execute there. You stay in control everywhere.
+                        </TextBlock>
+                    </StackPanel>
+                </StackPanel>
+            </Expander>
+
             <!-- Diagnostics -->
             <Expander Header="Help &amp; Diagnostics" HorizontalAlignment="Stretch">
                 <StackPanel Spacing="16" Padding="8">

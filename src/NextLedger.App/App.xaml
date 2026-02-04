@@ -8,6 +8,7 @@
     <Application.Resources>
         <ResourceDictionary>
             <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+            <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter" />
             <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
             <converters:CollectionEmptyToVisibilityConverter x:Key="CollectionEmptyToVisibilityConverter" />
             <converters:CollectionNotEmptyToVisibilityConverter x:Key="CollectionNotEmptyToVisibilityConverter" />
@@ -15,6 +16,8 @@
             <converters:DateOnlyToIsoStringConverter x:Key="DateOnlyToIsoStringConverter" />
             <converters:OverspentToBrushConverter x:Key="OverspentToBrushConverter" />
             <converters:BoolToOnOffBudgetConverter x:Key="BoolToOnOffBudgetConverter" />
+            <converters:BoolToValidationIconConverter x:Key="BoolToValidationIconConverter" />
+            <converters:BoolToValidationColorConverter x:Key="BoolToValidationColorConverter" />
             <ResourceDictionary.MergedDictionaries>
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
             </ResourceDictionary.MergedDictionaries>

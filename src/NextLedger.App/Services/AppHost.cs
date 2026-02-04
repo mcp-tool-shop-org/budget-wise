@@ -67,6 +67,9 @@ public sealed class AppHost
         });
         builder.Services.AddSingleton<IXrplClient, XrplClient>();
 
+        // XRPL Intent Service (plans, not executions — never signs or submits)
+        builder.Services.AddTransient<XrplIntentService>();
+
         // Engine orchestration surface (UI must go through this).
         // Wrap in instrumentation so we can measure call latency before building richer UI.
         builder.Services.AddSingleton<IEngineMetricsSink>(_ => new InMemoryEngineMetricsSink());

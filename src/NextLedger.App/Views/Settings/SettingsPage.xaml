@@ -233,13 +233,16 @@
                         <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" Padding="16"
                                 Visibility="{Binding IsXrplDetailVisible, Converter={StaticResource BoolToVisibilityConverter}}">
                             <StackPanel Spacing="12">
-                                <!-- Header with Close -->
-                                <Grid ColumnDefinitions="*,Auto">
+                                <!-- Header with Actions -->
+                                <Grid ColumnDefinitions="*,Auto,Auto">
                                     <StackPanel>
                                         <TextBlock Text="On-Chain Activity" Style="{StaticResource SubtitleTextBlockStyle}" />
                                         <TextBlock Text="{Binding SelectedXrplAccount.Name}" FontSize="13" Opacity="0.7" />
                                     </StackPanel>
-                                    <Button Grid.Column="1" Content="Close" Command="{Binding CloseXrplDetailCommand}" Padding="8,4" />
+                                    <Button Grid.Column="1" Content="Plan Transfer" Command="{Binding ShowTransferIntentCommand}" Padding="8,4"
+                                            Style="{StaticResource AccentButtonStyle}" Margin="0,0,8,0"
+                                            ToolTipService.ToolTip="Create a transfer plan (NextLedger will NOT execute it)" />
+                                    <Button Grid.Column="2" Content="Close" Command="{Binding CloseXrplDetailCommand}" Padding="8,4" />
                                 </Grid>
 
                                 <!-- Reconciliation Status -->
@@ -292,6 +295,196 @@
                                 <TextBlock Text="No transactions found. The account may be new or not yet activated."
                                            FontSize="12" Opacity="0.6" TextAlignment="Center"
                                            Visibility="{Binding XrplTransactions, Converter={StaticResource CollectionEmptyToVisibilityConverter}}" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ========== Transfer Intent Dialog ========== -->
+                        <!-- This is a PLAN, not an execution. NextLedger never signs or submits. -->
+                        <Border Background="{ThemeResource AcrylicBackgroundFillColorDefaultBrush}" CornerRadius="8" Padding="20"
+                                BorderBrush="{ThemeResource AccentFillColorDefaultBrush}" BorderThickness="2"
+                                Visibility="{Binding IsTransferIntentVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <StackPanel Spacing="16" MaxWidth="500">
+                                <!-- Header -->
+                                <StackPanel>
+                                    <TextBlock Text="Plan XRP Transfer" Style="{StaticResource SubtitleTextBlockStyle}" />
+                                    <TextBlock Text="Create a transfer plan. NextLedger will NOT execute this — you'll do that in your wallet."
+                                               FontSize="12" Opacity="0.7" TextWrapping="Wrap" />
+                                </StackPanel>
+
+                                <!-- From (read-only) -->
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="From" FontSize="12" Opacity="0.7" />
+                                    <Border Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" CornerRadius="4" Padding="12,8">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding SelectedXrplAccount.Name}" FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding SelectedXrplAccount.ExternalAddress}" FontSize="11" FontFamily="Consolas" Opacity="0.7" />
+                                            <TextBlock Text="{Binding SelectedXrplAccount.BalanceText}" FontSize="13" Opacity="0.9" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+
+                                <!-- To -->
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Destination Address *" FontSize="12" Opacity="0.7" />
+                                    <TextBox PlaceholderText="r-address (rXXX...)"
+                                             Text="{Binding TransferDestinationAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             FontFamily="Consolas" />
+                                </StackPanel>
+
+                                <!-- Amount -->
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Amount (XRP) *" FontSize="12" Opacity="0.7" />
+                                    <TextBox PlaceholderText="0.000000"
+                                             Text="{Binding TransferAmountXrp, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+
+                                <!-- Destination Tag (optional) -->
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Destination Tag (optional — required for exchanges)" FontSize="12" Opacity="0.7" />
+                                    <TextBox PlaceholderText="e.g., 12345"
+                                             Text="{Binding TransferDestinationTag, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+
+                                <!-- User Note (optional) -->
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Your Note (optional — stored locally)" FontSize="12" Opacity="0.7" />
+                                    <TextBox PlaceholderText="Why are you making this transfer?"
+                                             Text="{Binding TransferUserNote, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             TextWrapping="Wrap" AcceptsReturn="True" Height="60" />
+                                </StackPanel>
+
+                                <!-- Validate Button -->
+                                <Button Content="Preview Transfer" Command="{Binding ValidateTransferIntentCommand}"
+                                        Style="{StaticResource AccentButtonStyle}" HorizontalAlignment="Stretch" />
+
+                                <!-- ========== Validation Preview (Future Ledger) ========== -->
+                                <Border Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" CornerRadius="6" Padding="16"
+                                        Visibility="{Binding HasIntentValidation, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <StackPanel Spacing="12">
+                                        <!-- Status -->
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <FontIcon Glyph="{Binding IntentIsValid, Converter={StaticResource BoolToValidationIconConverter}}"
+                                                      FontSize="16" Foreground="{Binding IntentIsValid, Converter={StaticResource BoolToValidationColorConverter}}" />
+                                            <TextBlock Text="{Binding IntentValidationMessage}" FontWeight="SemiBold"
+                                                       Foreground="{Binding IntentIsValid, Converter={StaticResource BoolToValidationColorConverter}}" />
+                                        </StackPanel>
+
+                                        <!-- Balance Preview (the "Future Ledger" moment) -->
+                                        <StackPanel>
+                                            <TextBlock Text="Balance Preview" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,8" />
+                                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="4">
+                                                <TextBlock Text="Current Balance:" FontSize="12" />
+                                                <TextBlock Grid.Column="1" Text="{Binding IntentCurrentBalance}" FontSize="12" />
+
+                                                <TextBlock Grid.Row="1" Text="Estimated Fee:" FontSize="12" Opacity="0.8" />
+                                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding IntentEstimatedFee}" FontSize="12" Opacity="0.8" />
+
+                                                <TextBlock Grid.Row="2" Text="After Transfer:" FontSize="12" FontWeight="SemiBold" />
+                                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding IntentProjectedBalance}" FontSize="12" FontWeight="SemiBold" />
+
+                                                <TextBlock Grid.Row="3" Text="Reserve Requirement:" FontSize="12" Opacity="0.8" />
+                                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding IntentReserveRequirement}" FontSize="12" Opacity="0.8" />
+                                            </Grid>
+                                        </StackPanel>
+
+                                        <!-- Warnings -->
+                                        <ItemsControl ItemsSource="{Binding IntentWarnings}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="{ThemeResource SystemFillColorCautionBackgroundBrush}" CornerRadius="4" Padding="8" Margin="0,2">
+                                                        <TextBlock Text="{Binding}" FontSize="12" TextWrapping="Wrap" />
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+
+                                        <!-- Action Buttons -->
+                                        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                                            <Button Content="Approve Plan" Command="{Binding ApproveIntentCommand}"
+                                                    Style="{StaticResource AccentButtonStyle}"
+                                                    IsEnabled="{Binding IntentIsValid}"
+                                                    ToolTipService.ToolTip="Save this plan. Execute it externally in your wallet." />
+                                            <Button Grid.Column="1" Content="Export" Command="{Binding ExportExecutionPlanCommand}"
+                                                    ToolTipService.ToolTip="Copy execution details to clipboard for your wallet." />
+                                            <Button Grid.Column="2" Content="Cancel" Command="{Binding CancelTransferIntentCommand}" />
+                                        </Grid>
+
+                                        <!-- Reminder -->
+                                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="4" Padding="8">
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <FontIcon Glyph="&#xE946;" FontSize="14" Opacity="0.7" />
+                                                <TextBlock Text="NextLedger will NOT execute this. You must sign and submit in your XRPL wallet."
+                                                           FontSize="11" Opacity="0.7" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Cancel (when no validation yet) -->
+                                <Button Content="Cancel" Command="{Binding CancelTransferIntentCommand}" HorizontalAlignment="Right"
+                                        Visibility="{Binding HasIntentValidation, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ========== Intent History (Audit Trail) ========== -->
+                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" Padding="16">
+                            <StackPanel Spacing="12">
+                                <!-- Header with Refresh -->
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel>
+                                        <TextBlock Text="Transfer Plans (Intent History)" Style="{StaticResource SubtitleTextBlockStyle}" />
+                                        <TextBlock Text="Audit trail of your XRPL transfer plans — never executed by NextLedger."
+                                                   FontSize="12" Opacity="0.7" />
+                                    </StackPanel>
+                                    <Button Grid.Column="1" Content="Refresh" Command="{Binding LoadIntentHistoryCommand}" Padding="8,4" />
+                                </Grid>
+
+                                <!-- Loading -->
+                                <ProgressRing IsActive="{Binding IsLoadingIntentHistory}" Width="24" Height="24"
+                                              Visibility="{Binding IsLoadingIntentHistory, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+                                <!-- Empty State -->
+                                <TextBlock Text="No transfer plans yet. Use 'Plan Transfer' to create your first intent."
+                                           FontSize="12" Opacity="0.6" TextAlignment="Center"
+                                           Visibility="{Binding IntentHistory, Converter={StaticResource CollectionEmptyToVisibilityConverter}}" />
+
+                                <!-- Intent List -->
+                                <ListView ItemsSource="{Binding IntentHistory}" SelectionMode="None" MaxHeight="250">
+                                    <ListView.ItemContainerStyle>
+                                        <Style TargetType="ListViewItem">
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                            <Setter Property="Padding" Value="0" />
+                                            <Setter Property="Margin" Value="0,2" />
+                                        </Style>
+                                    </ListView.ItemContainerStyle>
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid ColumnDefinitions="Auto,*,Auto,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="2"
+                                                  Padding="10,8" Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" CornerRadius="4">
+                                                <!-- Row 0: Icon + Summary + Amount + Status -->
+                                                <FontIcon Glyph="{Binding StatusIcon}" FontSize="14" VerticalAlignment="Center" />
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Summary}" FontSize="12" TextTrimming="CharacterEllipsis" />
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="2" Text="{Binding AmountText}" FontSize="12" FontWeight="SemiBold"
+                                                           HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                                <Border Grid.Column="3" Padding="6,2" CornerRadius="4" VerticalAlignment="Center"
+                                                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                                                    <TextBlock Text="{Binding Status}" FontSize="11" />
+                                                </Border>
+
+                                                <!-- Row 1: Type + Timestamps -->
+                                                <StackPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Orientation="Horizontal" Spacing="12">
+                                                    <TextBlock Text="{Binding IntentType}" FontSize="10" Opacity="0.6" />
+                                                    <TextBlock FontSize="10" Opacity="0.6">
+                                                        <Run Text="Created:" />
+                                                        <Run Text="{Binding CreatedAtText}" />
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
                             </StackPanel>
                         </Border>
 

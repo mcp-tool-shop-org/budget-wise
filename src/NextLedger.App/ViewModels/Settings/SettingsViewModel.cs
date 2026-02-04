@@ -1,12 +1,14 @@
 using NextLedger.Application.DTOs;
 using NextLedger.Application.Interfaces;
 using NextLedger.Application.Services;
+using NextLedger.App.Services;
 using NextLedger.App.Services.Notifications;
 using NextLedger.Domain.Entities;
 using NextLedger.Domain.Enums;
 using NextLedger.Domain.ValueObjects;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace NextLedger.App.ViewModels.Settings;
 
@@ -675,6 +677,298 @@ public sealed partial class SettingsViewModel : ObservableObject
         _ => "\uE946" // Info
     };
 
+    // ========== XRPL Intent Layer (Phase 8) ==========
+    // Plans, not executions — NextLedger never signs or submits.
+
+    [ObservableProperty]
+    private bool _isTransferIntentVisible;
+
+    [ObservableProperty]
+    private string _transferDestinationAddress = string.Empty;
+
+    [ObservableProperty]
+    private string _transferAmountXrp = string.Empty;
+
+    [ObservableProperty]
+    private string _transferDestinationTag = string.Empty;
+
+    [ObservableProperty]
+    private string _transferMemo = string.Empty;
+
+    [ObservableProperty]
+    private string _transferUserNote = string.Empty;
+
+    // Intent validation preview
+    [ObservableProperty]
+    private bool _hasIntentValidation;
+
+    [ObservableProperty]
+    private bool _intentIsValid;
+
+    [ObservableProperty]
+    private string _intentValidationMessage = string.Empty;
+
+    [ObservableProperty]
+    private string _intentCurrentBalance = string.Empty;
+
+    [ObservableProperty]
+    private string _intentProjectedBalance = string.Empty;
+
+    [ObservableProperty]
+    private string _intentEstimatedFee = string.Empty;
+
+    [ObservableProperty]
+    private string _intentReserveRequirement = string.Empty;
+
+    [ObservableProperty]
+    private IReadOnlyList<string> _intentWarnings = Array.Empty<string>();
+
+    [ObservableProperty]
+    private XrplIntentDto? _pendingIntent;
+
+    /// <summary>
+    /// Opens the Transfer Intent dialog for the selected XRPL account.
+    /// This creates a PLAN, not an execution.
+    /// </summary>
+    [RelayCommand]
+    private void ShowTransferIntent()
+    {
+        if (SelectedXrplAccount is null)
+        {
+            _notifications.ShowWarning("No account selected", "Please select an XRPL account first.");
+            return;
+        }
+
+        // Reset the form
+        TransferDestinationAddress = string.Empty;
+        TransferAmountXrp = string.Empty;
+        TransferDestinationTag = string.Empty;
+        TransferMemo = string.Empty;
+        TransferUserNote = string.Empty;
+        HasIntentValidation = false;
+        PendingIntent = null;
+
+        IsTransferIntentVisible = true;
+    }
+
+    /// <summary>
+    /// Closes the Transfer Intent dialog without taking action.
+    /// </summary>
+    [RelayCommand]
+    private void CancelTransferIntent()
+    {
+        IsTransferIntentVisible = false;
+        HasIntentValidation = false;
+        PendingIntent = null;
+    }
+
+    /// <summary>
+    /// Validates the Transfer Intent and shows the "Future Ledger" preview.
+    /// Does NOT execute anything — just shows what would happen.
+    /// </summary>
+    [RelayCommand]
+    private async Task ValidateTransferIntentAsync()
+    {
+        if (SelectedXrplAccount is null)
+            return;
+
+        if (string.IsNullOrWhiteSpace(TransferDestinationAddress))
+        {
+            _notifications.ShowWarning("Destination required", "Please enter a destination XRPL address.");
+            return;
+        }
+
+        if (!decimal.TryParse(TransferAmountXrp, out var amount) || amount <= 0)
+        {
+            _notifications.ShowWarning("Invalid amount", "Please enter a valid XRP amount greater than 0.");
+            return;
+        }
+
+        try
+        {
+            var intentService = AppHost.Current.Services.GetRequiredService<XrplIntentService>();
+
+            uint? destTag = null;
+            if (!string.IsNullOrWhiteSpace(TransferDestinationTag) && uint.TryParse(TransferDestinationTag, out var tag))
+                destTag = tag;
+
+            var request = new CreateTransferIntentRequest
+            {
+                SourceAccountId = SelectedXrplAccount.Id,
+                DestinationAddress = TransferDestinationAddress.Trim(),
+                AmountXrp = amount,
+                DestinationTag = destTag,
+                Memo = string.IsNullOrWhiteSpace(TransferMemo) ? null : TransferMemo,
+                UserNote = string.IsNullOrWhiteSpace(TransferUserNote) ? null : TransferUserNote
+            };
+
+            var result = await intentService.CreateTransferIntentAsync(request, "SettingsPage");
+
+            if (!result.Success)
+            {
+                _notifications.ShowError("Intent failed", result.ErrorMessage ?? "Could not create intent.");
+                return;
+            }
+
+            // Show the validation preview
+            PendingIntent = result.Intent;
+            HasIntentValidation = true;
+            IntentIsValid = result.Validation!.IsValid;
+            IntentValidationMessage = result.Validation.Message;
+            IntentCurrentBalance = $"{result.Validation.CurrentBalanceXrp:N6} XRP";
+            IntentProjectedBalance = $"{result.Validation.ProjectedBalanceXrp:N6} XRP";
+            IntentEstimatedFee = $"{result.Validation.EstimatedFeeXrp:N6} XRP";
+            IntentReserveRequirement = $"{result.Validation.ReserveXrp:N6} XRP";
+            IntentWarnings = result.Validation.Warnings;
+        }
+        catch (Exception ex)
+        {
+            _notifications.ShowError("Validation error", ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Approves the pending intent — user acknowledges "I understand this plan."
+    /// Still does NOT execute anything.
+    /// </summary>
+    [RelayCommand]
+    private async Task ApproveIntentAsync()
+    {
+        if (PendingIntent is null)
+            return;
+
+        try
+        {
+            var intentService = AppHost.Current.Services.GetRequiredService<XrplIntentService>();
+            var success = await intentService.ApproveIntentAsync(PendingIntent.Id);
+
+            if (success)
+            {
+                _notifications.ShowSuccess(
+                    "Intent approved",
+                    "Your transfer plan has been saved. Execute it in your wallet, and NextLedger will detect the transaction.");
+            }
+            else
+            {
+                _notifications.ShowWarning("Approval failed", "Could not approve the intent.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _notifications.ShowError("Approval error", ex.Message);
+        }
+        finally
+        {
+            IsTransferIntentVisible = false;
+            HasIntentValidation = false;
+            PendingIntent = null;
+        }
+    }
+
+    /// <summary>
+    /// Generates an exportable execution plan text.
+    /// This is what the user takes to their wallet.
+    /// </summary>
+    [RelayCommand]
+    private async Task ExportExecutionPlanAsync()
+    {
+        if (PendingIntent is null)
+            return;
+
+        try
+        {
+            var intentService = AppHost.Current.Services.GetRequiredService<XrplIntentService>();
+            var plan = await intentService.GenerateExecutionPlanAsync(PendingIntent.Id);
+
+            if (plan is not null)
+            {
+                // Copy to clipboard
+                var planText = plan.GetExportText();
+                var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
+                dataPackage.SetText(planText);
+                Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+
+                _notifications.ShowSuccess("Plan exported", "Execution plan copied to clipboard. Paste it into your notes or wallet app.");
+            }
+            else
+            {
+                _notifications.ShowWarning("Export failed", "Could not generate execution plan.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _notifications.ShowError("Export error", ex.Message);
+        }
+    }
+
+    // ========== Intent History ==========
+
+    [ObservableProperty]
+    private IReadOnlyList<IntentHistoryRow> _intentHistory = Array.Empty<IntentHistoryRow>();
+
+    [ObservableProperty]
+    private bool _isLoadingIntentHistory;
+
+    [ObservableProperty]
+    private XrplIntentStats? _intentStats;
+
+    public bool HasIntentHistory => IntentHistory.Count > 0;
+
+    [RelayCommand]
+    private async Task LoadIntentHistoryAsync()
+    {
+        IsLoadingIntentHistory = true;
+        try
+        {
+            var intentService = AppHost.Current.Services.GetRequiredService<XrplIntentService>();
+            var intents = await intentService.GetRecentIntentsAsync(20);
+            var stats = await intentService.GetStatsAsync();
+
+            IntentHistory = intents.Select(i => new IntentHistoryRow(
+                i.Id,
+                i.IntentTypeText,
+                i.StatusText,
+                i.Summary,
+                i.AmountText,
+                i.CreatedAt,
+                i.ApprovedAt,
+                i.MatchedAt,
+                i.IsValid,
+                GetStatusIcon(i.Status),
+                GetStatusColor(i.Status)
+            )).ToArray();
+
+            IntentStats = stats;
+            OnPropertyChanged(nameof(HasIntentHistory));
+        }
+        catch (Exception ex)
+        {
+            _notifications.ShowError("Load failed", ex.Message);
+        }
+        finally
+        {
+            IsLoadingIntentHistory = false;
+        }
+    }
+
+    private static string GetStatusIcon(XrplIntentStatus status) => status switch
+    {
+        XrplIntentStatus.Draft => "\uE8C3", // Edit
+        XrplIntentStatus.Approved => "\uE8FB", // Checkmark
+        XrplIntentStatus.Cancelled => "\uE711", // Cancel
+        XrplIntentStatus.Matched => "\uE930", // Link
+        _ => "\uE946" // Info
+    };
+
+    private static string GetStatusColor(XrplIntentStatus status) => status switch
+    {
+        XrplIntentStatus.Draft => "Gray",
+        XrplIntentStatus.Approved => "ForestGreen",
+        XrplIntentStatus.Cancelled => "Tomato",
+        XrplIntentStatus.Matched => "DodgerBlue",
+        _ => "Gray"
+    };
+
     // ========== Row Models ==========
 
     public sealed record AccountRow(
@@ -726,5 +1020,31 @@ public sealed partial class SettingsViewModel : ObservableObject
 
         /// <summary>Formatted timestamp for display.</summary>
         public string TimestampText => Timestamp.ToString("yyyy-MM-dd HH:mm");
+    }
+
+    /// <summary>
+    /// Row model for XRPL intent history. Audit trail of user plans.
+    /// </summary>
+    public sealed record IntentHistoryRow(
+        Guid Id,
+        string IntentType,
+        string Status,
+        string Summary,
+        string AmountText,
+        DateTime CreatedAt,
+        DateTime? ApprovedAt,
+        DateTime? MatchedAt,
+        bool IsValid,
+        string StatusIcon,
+        string StatusColor)
+    {
+        /// <summary>Formatted creation time.</summary>
+        public string CreatedAtText => CreatedAt.ToString("yyyy-MM-dd HH:mm");
+
+        /// <summary>Formatted approved time.</summary>
+        public string ApprovedAtText => ApprovedAt?.ToString("yyyy-MM-dd HH:mm") ?? "-";
+
+        /// <summary>Formatted matched time.</summary>
+        public string MatchedAtText => MatchedAt?.ToString("yyyy-MM-dd HH:mm") ?? "-";
     }
 }

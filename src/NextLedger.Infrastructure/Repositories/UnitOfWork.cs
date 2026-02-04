@@ -1,5 +1,6 @@
 using NextLedger.Application.Interfaces;
 using NextLedger.Infrastructure.Database;
+using NextLedger.Infrastructure.Persistence;
 using Microsoft.Data.Sqlite;
 
 namespace NextLedger.Infrastructure.Repositories;
@@ -20,6 +21,7 @@ public sealed class UnitOfWork : IUnitOfWork
     private BudgetPeriodRepository? _budgetPeriods;
     private EnvelopeAllocationRepository? _envelopeAllocations;
     private PayeeRepository? _payees;
+    private XrplIntentRepository? _xrplIntents;
 
     public UnitOfWork(SqliteConnectionFactory connectionFactory)
     {
@@ -33,6 +35,7 @@ public sealed class UnitOfWork : IUnitOfWork
     public IBudgetPeriodRepository BudgetPeriods => _budgetPeriods ??= new BudgetPeriodRepository(_connectionFactory);
     public IEnvelopeAllocationRepository EnvelopeAllocations => _envelopeAllocations ??= new EnvelopeAllocationRepository(_connectionFactory);
     public IPayeeRepository Payees => _payees ??= new PayeeRepository(_connectionFactory);
+    public IXrplIntentRepository XrplIntents => _xrplIntents ??= new XrplIntentRepository(_connectionFactory.GetConnection());
 
     public Task<int> SaveChangesAsync(CancellationToken ct = default)
     {

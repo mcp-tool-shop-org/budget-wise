@@ -12,6 +12,7 @@ public interface IUnitOfWork : IDisposable
     IBudgetPeriodRepository BudgetPeriods { get; }
     IEnvelopeAllocationRepository EnvelopeAllocations { get; }
     IPayeeRepository Payees { get; }
+    IXrplIntentRepository XrplIntents { get; }
 
     Task<int> SaveChangesAsync(CancellationToken ct = default);
     Task BeginTransactionAsync(CancellationToken ct = default);
