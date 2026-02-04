@@ -11,6 +11,12 @@ Envelope budgeting is a simple, proven method where you allocate your income int
 - Phase 3 checklist: [PHASE3_CHECKLIST.md](PHASE3_CHECKLIST.md)
 - Phase 4 checklist: [PHASE4_CHECKLIST.md](PHASE4_CHECKLIST.md)
 - Phase 5 checklist: [PHASE5_CHECKLIST.md](PHASE5_CHECKLIST.md)
+- Phase 12 audit (RC discipline): [docs/PHASE12_AUDIT.md](docs/PHASE12_AUDIT.md)
+- Phase 12 checklist: [docs/PHASE12_CHECKLIST.md](docs/PHASE12_CHECKLIST.md)
+- RC discipline checklist: [docs/RC_DISCIPLINE_CHECKLIST.md](docs/RC_DISCIPLINE_CHECKLIST.md)
+- Release process: [docs/RELEASE_PROCESS.md](docs/RELEASE_PROCESS.md)
+- Verify a release: [docs/VERIFY_RELEASE.md](docs/VERIFY_RELEASE.md)
+- Changelog: [CHANGELOG.md](CHANGELOG.md)
 - Engine error codes catalog: [ENGINE_ERROR_CODES.md](ENGINE_ERROR_CODES.md)
 
 ## Features (Planned)

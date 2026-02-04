@@ -1,0 +1,82 @@
+name: Bug Report
+description: Report a problem with BudgetWise
+title: "bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug.
+
+        If this is a UI issue, include screenshots.
+        If this is a data issue, avoid posting personal financial data.
+  - type: input
+    id: build
+    attributes:
+      label: Build / Version
+      description: Git SHA or release tag (if known)
+      placeholder: e.g. 3e5a645 or v0.1.0-rc.1
+    validations:
+      required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Budget
+        - Transactions
+        - Import
+        - Reconcile
+        - Diagnostics
+        - Build/CI
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Describe the observed behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps are best.
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots / recordings
+      description: Drag and drop images here (avoid sensitive info).
+    validations:
+      required: false
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics / logs
+      description: Paste "Copy diagnostics" output if available (redact paths/usernames if needed).
+      render: text
+    validations:
+      required: false
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I did not include sensitive personal financial data.
+          required: true
+        - label: I searched existing issues before filing this.
+          required: true

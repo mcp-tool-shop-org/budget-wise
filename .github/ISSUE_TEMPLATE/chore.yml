@@ -1,0 +1,27 @@
+name: Chore / Maintenance
+description: Refactors, tooling, CI, cleanup
+title: "chore: "
+labels: [chore]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What needs to change and why?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope of work
+      placeholder: |
+        -
+        -
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks / rollout
+    validations:
+      required: false

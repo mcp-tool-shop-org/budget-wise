@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  build_test:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version-file: global.json
+
+      - name: Restore
+        run: dotnet restore "BudgetWise.sln"
+
+      - name: Build (Release)
+        run: dotnet build "BudgetWise.sln" -c Release --no-restore -v minimal
+
+      - name: Test (Release)
+        run: dotnet test "BudgetWise.sln" -c Release --no-build -v minimal
