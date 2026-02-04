@@ -1,4 +1,4 @@
-"""Generate BudgetWise app icon in ICO format using Pillow."""
+"""Generate NextLedger app icon in ICO format using Pillow."""
 from PIL import Image, ImageDraw, ImageFont
 import os
 
@@ -83,7 +83,7 @@ def create_budget_icon(size: int) -> Image.Image:
 def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(script_dir)
-    assets_dir = os.path.join(project_root, "src", "BudgetWise.App", "Assets")
+    assets_dir = os.path.join(project_root, "src", "NextLedger.App", "Assets")
     os.makedirs(assets_dir, exist_ok=True)
 
     # Generate icons at multiple sizes for ICO
@@ -95,12 +95,12 @@ def main():
         images.append(img)
         # Also save individual PNGs for other uses
         if size in [32, 256]:
-            png_path = os.path.join(assets_dir, f"BudgetWise_{size}.png")
+            png_path = os.path.join(assets_dir, f"NextLedger_{size}.png")
             img.save(png_path, "PNG")
             print(f"Saved: {png_path}")
 
     # Save as ICO with all sizes
-    ico_path = os.path.join(assets_dir, "BudgetWise.ico")
+    ico_path = os.path.join(assets_dir, "NextLedger.ico")
     images[0].save(
         ico_path,
         format='ICO',
@@ -110,7 +110,7 @@ def main():
     print(f"Saved: {ico_path}")
 
     # Also save to project root for easy access
-    root_ico = os.path.join(project_root, "src", "BudgetWise.App", "BudgetWise.ico")
+    root_ico = os.path.join(project_root, "src", "NextLedger.App", "NextLedger.ico")
     images[0].save(
         root_ico,
         format='ICO',

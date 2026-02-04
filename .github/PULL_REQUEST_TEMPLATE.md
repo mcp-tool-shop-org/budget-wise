@@ -12,8 +12,8 @@
 
 ## Testing
 
-- [ ] `dotnet build BudgetWise.sln -c Release` (or CI)
-- [ ] `dotnet test BudgetWise.sln -c Release` (or CI)
+- [ ] `dotnet build NextLedger.sln -c Release` (or CI)
+- [ ] `dotnet test NextLedger.sln -c Release` (or CI)
 
 ## Evidence (UI / Phase 12)
 

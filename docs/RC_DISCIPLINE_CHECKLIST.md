@@ -1,4 +1,4 @@
-# RC Discipline Checklist (BudgetWise)
+# RC Discipline Checklist (NextLedger)
 
 This is the "do not ship without this" checklist.
 

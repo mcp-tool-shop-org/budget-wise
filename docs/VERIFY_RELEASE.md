@@ -1,4 +1,4 @@
-# Verify a Release (BudgetWise)
+# Verify a Release (NextLedger)
 
 This is the runbook for validating an RC build on a clean machine or a clean user profile.
 
@@ -26,9 +26,9 @@ Capture:
 
 ## 3) Persistence check
 
-BudgetWise stores its local DB under:
+NextLedger stores its local DB under:
 
-- `%LOCALAPPDATA%\BudgetWise\budgetwise.db`
+- `%LOCALAPPDATA%\NextLedger\NextLedger.db`
 
 Verify:
 

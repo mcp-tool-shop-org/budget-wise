@@ -1,6 +1,6 @@
-# Release Process (BudgetWise)
+# Release Process (NextLedger)
 
-This doc defines how we cut Release Candidates (RCs) and stable releases for BudgetWise.
+This doc defines how we cut Release Candidates (RCs) and stable releases for NextLedger.
 
 ## Goals
 
@@ -27,20 +27,20 @@ Rule: Every user-visible change updates `CHANGELOG.md`.
 
 Before cutting an RC:
 
-- `dotnet build BudgetWise.sln -c Release`
-- `dotnet test BudgetWise.sln -c Release`
+- `dotnet build NextLedger.sln -c Release`
+- `dotnet test NextLedger.sln -c Release`
 - Update `CHANGELOG.md`
 - Update `docs/PHASE12_AUDIT.md` (Phase 12)
 - Capture screenshots/recordings under `docs/phase12/screenshots/commit-##/`
 
 ## Artifact strategy (WinUI)
 
-BudgetWise is a WinUI 3 app.
+NextLedger is a WinUI 3 app.
 
 ### Option A — Unpackaged (fastest for internal testing)
 
-- Build: `dotnet build .\src\BudgetWise.App\BudgetWise.App.csproj -c Release`
-- Ship: zip the output folder under `src/ BudgetWise.App/bin/Release/...` and include a short "how to run" note.
+- Build: `dotnet build .\src\NextLedger.App\NextLedger.App.csproj -c Release`
+- Ship: zip the output folder under `src/ NextLedger.App/bin/Release/...` and include a short "how to run" note.
 
 Pros: easy.
 Cons: not a true installer experience.

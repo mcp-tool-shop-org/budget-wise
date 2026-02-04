@@ -1,6 +1,6 @@
-# Phase 12 Audit — Release Candidate Discipline (BudgetWise)
+# Phase 12 Audit — Release Candidate Discipline (NextLedger)
 
-Phase 12 is about proving **BudgetWise** is stable, releasable, supportable, and resilient in real environments — with evidence you can point to later.
+Phase 12 is about proving **NextLedger** is stable, releasable, supportable, and resilient in real environments — with evidence you can point to later.
 
 Companion docs:
 
@@ -31,7 +31,7 @@ For every Phase 12 commit:
 ## Evidence types we accept
 
 - `dotnet test -c Release` output (paste summary + counts)
-- `dotnet build BudgetWise.sln -c Release` output summary
+- `dotnet build NextLedger.sln -c Release` output summary
 - Manual run evidence from `PHASE5_SANITY_TEST.md`
 - Screenshots/GIFs of key UI states
 - If a build prerequisite exists (WinUI toolchain), capture it in docs + screenshots
@@ -69,7 +69,7 @@ For every Phase 12 commit:
 ### Commit 03 — Cold machine install/upgrade/uninstall runbook
 
 - **Commit:** TBD
-- **Goal:** Kill “works on my machine” for BudgetWise WinUI desktop.
+- **Goal:** Kill “works on my machine” for NextLedger WinUI desktop.
 - **What changed:**
   - TBD
 - **Test evidence:**
@@ -82,7 +82,7 @@ For every Phase 12 commit:
 ### Commit 04 — Soak test harness (stability over time)
 
 - **Commit:** TBD
-- **Goal:** Prove BudgetWise stays responsive and doesn’t leak.
+- **Goal:** Prove NextLedger stays responsive and doesn’t leak.
 - **What changed:**
   - TBD
 - **Test evidence:**
@@ -121,8 +121,8 @@ For every Phase 12 commit:
 ### Commit 07 — Help Center → Troubleshooting Assistant
 
 - **Commit:** TBD
-- **Goal:** Make in-app help actionable for BudgetWise.
-- **BudgetWise-specific scope:**
+- **Goal:** Make in-app help actionable for NextLedger.
+- **NextLedger-specific scope:**
   - Budget math / Ready-to-Assign confusion
   - Import duplicates / date parsing
   - Reconciliation difference not zero
@@ -140,7 +140,7 @@ For every Phase 12 commit:
 ### Commit 08 — UX consistency audit (light/dark + contrast + density)
 
 - **Commit:** TBD
-- **Goal:** Ensure BudgetWise feels intentional in both themes.
+- **Goal:** Ensure NextLedger feels intentional in both themes.
 - **What changed:**
   - TBD
 - **Test evidence:**
@@ -161,7 +161,7 @@ For every Phase 12 commit:
 
 - **Commit:** TBD
 - **Goal:** Every RC build produces a proof bundle.
-- **BudgetWise-specific artifacts:**
+- **NextLedger-specific artifacts:**
   - MSIX (or signed unpackaged zip if MSIX isn’t ready)
   - checksums
   - audit snapshot

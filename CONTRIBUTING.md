@@ -1,11 +1,11 @@
-# Contributing to BudgetWise
+# Contributing to NextLedger
 
-Thanks for helping improve BudgetWise.
+Thanks for helping improve NextLedger.
 
 ## Quick start
 
 - Use Windows + Visual Studio 2022 for the WinUI project.
-- Run tests: `dotnet test BudgetWise.sln -c Release`
+- Run tests: `dotnet test NextLedger.sln -c Release`
 
 ## Pull requests
 

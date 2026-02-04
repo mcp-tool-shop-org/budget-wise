@@ -1,6 +1,6 @@
 # Code of Conduct
 
-We want BudgetWise to be a welcoming project.
+We want NextLedger to be a welcoming project.
 
 ## Our standards
 

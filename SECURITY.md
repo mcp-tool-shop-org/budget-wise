@@ -2,7 +2,7 @@
 
 ## Reporting a Vulnerability
 
-If you believe you have found a security vulnerability in BudgetWise, please do **not** open a public issue.
+If you believe you have found a security vulnerability in NextLedger, please do **not** open a public issue.
 
 Instead, report it privately:
 

@@ -19,10 +19,10 @@ jobs:
           dotnet-version-file: global.json
 
       - name: Restore
-        run: dotnet restore "BudgetWise.sln"
+        run: dotnet restore "NextLedger.sln"
 
       - name: Build (Release)
-        run: dotnet build "BudgetWise.sln" -c Release --no-restore -v minimal
+        run: dotnet build "NextLedger.sln" -c Release --no-restore -v minimal
 
       - name: Test (Release)
-        run: dotnet test "BudgetWise.sln" -c Release --no-build -v minimal
+        run: dotnet test "NextLedger.sln" -c Release --no-build -v minimal

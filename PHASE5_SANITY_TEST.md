@@ -14,7 +14,7 @@ Build: _____________________ (Debug/Release + git SHA if available)
 ## 0) Preflight
 
 - [ ] App launches without errors
-- [ ] Window title shows **BudgetWise**
+- [ ] Window title shows **NextLedger**
 - [ ] Global notifications (InfoBar) are visible when triggered
 
 **Notes:**

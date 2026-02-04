@@ -163,7 +163,7 @@ Web3/XRPL notes (keep support-safe and predictable):
 ## 8. Documentation & Product Surface
 
 - README updated:
-  - What BudgetWise is (and is not)
+  - What NextLedger is (and is not)
   - Key principles (offline-first, deterministic, no drift)
 - Short “How budgeting works here” doc:
   - Ready-to-Assign

@@ -115,7 +115,7 @@ def create_splash_screen(width: int, height: int) -> Image.Image:
 def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(script_dir)
-    assets_dir = os.path.join(project_root, "src", "BudgetWise.App", "Assets")
+    assets_dir = os.path.join(project_root, "src", "NextLedger.App", "Assets")
     os.makedirs(assets_dir, exist_ok=True)
 
     # Square logos at various scales

@@ -1,18 +1,18 @@
-# BudgetWise
+# NextLedger
 
 <p align="center">
-  <img src="src/BudgetWise.App/Assets/BudgetWise_256.png" alt="BudgetWise Icon" width="128" height="128">
+  <img src="src/NextLedger.App/Assets/NextLedger_256.png" alt="NextLedger Icon" width="128" height="128">
 </p>
 
 **Envelope budgeting for Windows — give every dollar a job.**
 
-A Windows-first personal finance app using envelope budgeting methodology. Your data stays local, no cloud required.
+A Windows-first personal finance app using envelope budgeting methodology. Your data stays local, no cloud required. Built as a **future ledger** — an authoritative system of financial truth with explicit human agency at every boundary.
 
 ## Download
 
-📦 **[Latest Release](https://github.com/mcp-tool-shop-org/budget-wise/releases/latest)**
+📦 **[Latest Release](https://github.com/mcp-tool-shop-org/NextLedger/releases/latest)**
 
-Download the ZIP, extract, and run `BudgetWise.App.exe`. No installation required.
+Download the ZIP, extract, and run `NextLedger.App.exe`. No installation required.
 
 ## What is Envelope Budgeting?
 
@@ -37,6 +37,8 @@ Envelope budgeting is a simple, proven method where you allocate your income int
 - [Changelog](CHANGELOG.md)
 - [Engine Error Codes](ENGINE_ERROR_CODES.md)
 - [Release Process](docs/RELEASE_PROCESS.md)
+- [Future Ledger Vision](docs/FUTURE_LEDGER_VISION.md)
+- [Ledger Execution Checklist](docs/LEDGER_EXECUTION_CHECKLIST.md)
 
 ## Technology
 
@@ -59,6 +61,18 @@ Core functionality complete:
 
 See [DESIGN.md](DESIGN.md) for detailed architecture.
 
+## Roadmap
+
+NextLedger is evolving toward a **future ledger** — see [Future Ledger Vision](docs/FUTURE_LEDGER_VISION.md) for the full architecture.
+
+| Layer | Status | Description |
+|-------|--------|-------------|
+| Observation | ✅ Complete | Local balances, transactions, accounts |
+| Interpretation | ✅ Complete | Envelope budgeting, spending analysis |
+| Intent Declaration | 🔜 Planned | Budget goals, allocation rules |
+| Constraint Enforcement | 🔜 Planned | Budget limits, overspend protection |
+| User-Approved Execution | 🔮 Future | Web3 integration (non-custodial) |
+
 ## Development
 
 ### Prerequisites
@@ -70,7 +84,7 @@ See [DESIGN.md](DESIGN.md) for detailed architecture.
   - Windows SDK / MSIX (Appx/PRI build tools)
 - .NET 9 SDK
 
-**Note on CLI builds (WinUI):** The WinUI project (`BudgetWise.App`) runs Windows App SDK build steps that require the Appx/MSIX + PRI MSBuild task assemblies. If you see an error like `MSB4062` referencing missing `Microsoft.Build.AppxPackage.dll` or `Microsoft.Build.Packaging.Pri.Tasks.dll`, install the Windows SDK / MSIX components via the Visual Studio Installer (or build the app from within Visual Studio).
+**Note on CLI builds (WinUI):** The WinUI project (`NextLedger.App`) runs Windows App SDK build steps that require the Appx/MSIX + PRI MSBuild task assemblies. If you see an error like `MSB4062` referencing missing `Microsoft.Build.AppxPackage.dll` or `Microsoft.Build.Packaging.Pri.Tasks.dll`, install the Windows SDK / MSIX components via the Visual Studio Installer (or build the app from within Visual Studio).
 
 ### Building
 
@@ -83,27 +97,27 @@ dotnet build
 
 **Visual Studio (recommended)**
 
-1. Open `BudgetWise.sln` in Visual Studio 2022.
-2. Set `BudgetWise.App` as the startup project.
+1. Open `NextLedger.sln` in Visual Studio 2022.
+2. Set `NextLedger.App` as the startup project.
 3. Run with **F5**.
 
 **CLI (build + launch)**
 
 ```bash
-dotnet build .\src\BudgetWise.App\BudgetWise.App.csproj -c Debug
+dotnet build .\src\NextLedger.App\NextLedger.App.csproj -c Debug
 ```
 
 If this fails with `MSB4062`, see the note in **Prerequisites**.
 
 Then run the generated exe from the build output folder under:
 
-- `.\src\BudgetWise.App\bin\Debug\net9.0-windows10.0.19041.0\`
+- `.\src\NextLedger.App\bin\Debug\net9.0-windows10.0.19041.0\`
 
 **Local data location**
 
 The app creates a local SQLite database at:
 
-- `%LOCALAPPDATA%\BudgetWise\budgetwise.db`
+- `%LOCALAPPDATA%\NextLedger\NextLedger.db`
 
 ### Running Tests
 

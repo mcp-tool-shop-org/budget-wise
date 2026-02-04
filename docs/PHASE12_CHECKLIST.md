@@ -1,4 +1,4 @@
-# Phase 12 Checklist — Release Candidate Discipline (BudgetWise)
+# Phase 12 Checklist — Release Candidate Discipline (NextLedger)
 
 This checklist is the execution companion to `docs/PHASE12_AUDIT.md`.
 

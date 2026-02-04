@@ -1,4 +1,4 @@
-# BudgetWise - Personal Envelope Budgeting App
+# NextLedger - Personal Envelope Budgeting App
 
 ## Vision
 
@@ -199,19 +199,19 @@ ReadyToAssign =
 ## Project Structure
 
 ```
-BudgetWise/
+NextLedger/
 ├── src/
-│   ├── BudgetWise.Domain/           ← Entities, Value Objects
-│   ├── BudgetWise.Application/      ← Services, Use Cases
-│   ├── BudgetWise.Infrastructure/   ← SQLite, Repositories
-│   └── BudgetWise.App/              ← WinUI 3 (Phase 2+)
+│   ├── NextLedger.Domain/           ← Entities, Value Objects
+│   ├── NextLedger.Application/      ← Services, Use Cases
+│   ├── NextLedger.Infrastructure/   ← SQLite, Repositories
+│   └── NextLedger.App/              ← WinUI 3 (Phase 2+)
 ├── tests/
-│   ├── BudgetWise.Domain.Tests/
-│   ├── BudgetWise.Application.Tests/
-│   └── BudgetWise.Infrastructure.Tests/
+│   ├── NextLedger.Domain.Tests/
+│   ├── NextLedger.Application.Tests/
+│   └── NextLedger.Infrastructure.Tests/
 ├── DESIGN.md
 ├── README.md
-└── BudgetWise.sln
+└── NextLedger.sln
 ```
 
 ---

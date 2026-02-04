@@ -1,0 +1,369 @@
+<Page
+    x:Class="NextLedger.App.Views.Help.HelpPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <ScrollViewer Padding="24" HorizontalScrollBarVisibility="Disabled">
+    <Grid MaxWidth="800" HorizontalAlignment="Center">
+        <StackPanel Spacing="24">
+            <!-- Welcome Section -->
+            <StackPanel Spacing="8">
+                <TextBlock Text="Welcome to NextLedger" FontSize="28" FontWeight="SemiBold" />
+                <TextBlock TextWrapping="Wrap" Opacity="0.9" FontSize="15">
+                    NextLedger helps you plan your money with clarity and confidence.
+                </TextBlock>
+                <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                    It's built around a simple idea: Only budget money you actually have — and always know where it's going.
+                </TextBlock>
+                <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                    You don't need to be good at math. You don't need to get everything right the first time. NextLedger is designed to guide you, not judge you.
+                </TextBlock>
+            </StackPanel>
+
+            <!-- Getting Started -->
+            <Expander Header="Getting Started" IsExpanded="True" HorizontalAlignment="Stretch">
+                <StackPanel Spacing="16" Padding="8">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="What should I do first?" FontWeight="SemiBold" FontSize="16" />
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            Most people follow this order:
+                        </TextBlock>
+                        <StackPanel Spacing="8" Margin="16,8,0,0">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="1. Add income" FontWeight="SemiBold" />
+                                <TextBlock Text="Tell NextLedger how much money you've received." Opacity="0.8" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="2. Budget your money" FontWeight="SemiBold" />
+                                <TextBlock Text="Assign that money to envelopes (categories) based on what you want it to do." Opacity="0.8" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="3. Add spending" FontWeight="SemiBold" />
+                                <TextBlock Text="Record purchases as they happen, or import them from your bank." Opacity="0.8" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="4. Reconcile" FontWeight="SemiBold" />
+                                <TextBlock Text="Periodically confirm your numbers match your bank." Opacity="0.8" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </StackPanel>
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8" Margin="0,8,0,0">
+                            You can do these steps at your own pace. Nothing breaks if you pause or change your mind.
+                        </TextBlock>
+                    </StackPanel>
+
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Why do I see starter data?" FontWeight="SemiBold" FontSize="16" />
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            On first run, NextLedger creates a small set of starter accounts and envelopes so you're not staring at an empty screen.
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            You can rename or delete anything later.
+                        </TextBlock>
+                    </StackPanel>
+                </StackPanel>
+            </Expander>
+
+            <!-- Core Concepts -->
+            <Expander Header="Core Concepts" HorizontalAlignment="Stretch">
+                <StackPanel Spacing="20" Padding="8">
+                    <!-- Ready to Assign -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Ready to Assign" FontWeight="SemiBold" FontSize="16" />
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            Ready to Assign is the amount of money you currently have available to budget.
+                        </TextBlock>
+                        <StackPanel Spacing="4" Margin="16,0,0,0">
+                            <TextBlock Text="• It comes from income you've added" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="• It goes down as you assign money to envelopes" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="• It can never go below zero" Opacity="0.8" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8" Margin="0,8,0,0">
+                            If Ready to Assign is $0, that simply means all your current money already has a job.
+                        </TextBlock>
+                        <InfoBar IsOpen="True" IsClosable="False" Severity="Informational"
+                                 Title="Tip"
+                                 Message="If you want to budget more, add income or move money from another envelope." />
+                    </StackPanel>
+
+                    <!-- Envelopes -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Envelopes" FontWeight="SemiBold" FontSize="16" />
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            Envelopes represent what you want your money to do — rent, groceries, savings, fun, anything.
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            Each envelope shows:
+                        </TextBlock>
+                        <StackPanel Spacing="4" Margin="16,0,0,0">
+                            <TextBlock Text="• Assigned – how much you planned to spend" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="• Spent – how much you actually spent" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="• Available – what's left right now" Opacity="0.8" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8" FontStyle="Italic" Margin="0,8,0,0">
+                            Budgeting is not a one-time decision — it's a living plan.
+                        </TextBlock>
+                    </StackPanel>
+
+                    <!-- Overspending -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Overspending (It Happens — and It's Okay)" FontWeight="SemiBold" FontSize="16" />
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            If you spend more than what's available in an envelope, it becomes overspent.
+                        </TextBlock>
+                        <InfoBar IsOpen="True" IsClosable="False" Severity="Success"
+                                 Title="This is not an error"
+                                 Message="Overspending means you spent more than planned. That difference needs to be covered." />
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            You can fix overspending by:
+                        </TextBlock>
+                        <StackPanel Spacing="4" Margin="16,0,0,0">
+                            <TextBlock Text="• Moving money from another envelope, or" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="• Letting it roll into the next month as debt" Opacity="0.8" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8" Margin="0,8,0,0">
+                            NextLedger shows overspending clearly so you can deal with it calmly.
+                        </TextBlock>
+                    </StackPanel>
+
+                    <!-- Rollover -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Rollover (Month to Month)" FontWeight="SemiBold" FontSize="16" />
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            At the end of a month:
+                        </TextBlock>
+                        <StackPanel Spacing="4" Margin="16,0,0,0">
+                            <TextBlock Text="• Positive envelope balances roll forward" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="• Overspending carries forward as a negative balance" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="• Unassigned money rolls forward as Ready to Assign" Opacity="0.8" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8" FontWeight="SemiBold" Margin="0,8,0,0">
+                            Nothing disappears. Nothing is hidden.
+                        </TextBlock>
+                    </StackPanel>
+
+                    <!-- Goals -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Goals" FontWeight="SemiBold" FontSize="16" />
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            Goals help you plan ahead. A goal answers: "How much do I want in this envelope, and by when?"
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            NextLedger can help you fund goals automatically when you have available money — but you're always in control.
+                        </TextBlock>
+                    </StackPanel>
+                </StackPanel>
+            </Expander>
+
+            <!-- Common Tasks -->
+            <Expander Header="Common Tasks" HorizontalAlignment="Stretch">
+                <StackPanel Spacing="20" Padding="8">
+                    <!-- Budget money -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="How do I budget money?" FontWeight="SemiBold" FontSize="16" />
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            Go to the Budget screen. In the Assigned column:
+                        </TextBlock>
+                        <StackPanel Spacing="4" Margin="16,0,0,0">
+                            <TextBlock Text="1. Click an envelope" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="2. Type the amount you want to assign" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="3. Press Enter or click away to save" Opacity="0.8" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8" Margin="0,8,0,0">
+                            You'll see Ready to Assign update immediately.
+                        </TextBlock>
+                    </StackPanel>
+
+                    <!-- Cover overspending -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="How do I cover overspending?" FontWeight="SemiBold" FontSize="16" />
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            On the Budget screen:
+                        </TextBlock>
+                        <StackPanel Spacing="4" Margin="16,0,0,0">
+                            <TextBlock Text="1. Look for envelopes marked Overspent" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="2. Move money from another envelope to cover the difference" Opacity="0.8" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8" Margin="0,8,0,0">
+                            This keeps your plan honest and your totals accurate.
+                        </TextBlock>
+                    </StackPanel>
+
+                    <!-- Add transactions -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="How do I add transactions?" FontWeight="SemiBold" FontSize="16" />
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            You can add them manually on the Transactions screen, or import them from your bank using Import (CSV).
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            Transactions can be: Spending (outflows), Income (inflows), or Transfers between accounts.
+                        </TextBlock>
+                    </StackPanel>
+
+                    <!-- Split transactions -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="What are split transactions?" FontWeight="SemiBold" FontSize="16" />
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            Sometimes one purchase belongs to multiple envelopes. Split transactions let you:
+                        </TextBlock>
+                        <StackPanel Spacing="4" Margin="16,0,0,0">
+                            <TextBlock Text="• Divide a single purchase across categories" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="• Keep your account totals accurate" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="• See correct spending per envelope" Opacity="0.8" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8" Margin="0,8,0,0">
+                            NextLedger will prevent you from saving a split if the amounts don't add up — so nothing goes out of balance.
+                        </TextBlock>
+                    </StackPanel>
+
+                    <!-- Import -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="How does importing work?" FontWeight="SemiBold" FontSize="16" />
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            Importing follows a simple flow:
+                        </TextBlock>
+                        <StackPanel Spacing="4" Margin="16,0,0,0">
+                            <TextBlock Text="1. Choose or paste a CSV file" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="2. Preview what will be added" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="3. Review duplicates or skipped items" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="4. Confirm the import" Opacity="0.8" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8" Margin="0,8,0,0">
+                            NextLedger automatically detects duplicates, so importing the same file twice is safe.
+                        </TextBlock>
+                    </StackPanel>
+
+                    <!-- Reconciliation -->
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="What is reconciliation?" FontWeight="SemiBold" FontSize="16" />
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            Reconciliation is how you confirm: "What NextLedger shows matches my bank."
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            You enter your bank's statement balance, then mark transactions as cleared.
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            When the difference is zero, your account is reconciled.
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            NextLedger will clearly tell you when everything matches.
+                        </TextBlock>
+                    </StackPanel>
+                </StackPanel>
+            </Expander>
+
+            <!-- Troubleshooting -->
+            <Expander Header="Troubleshooting" HorizontalAlignment="Stretch">
+                <StackPanel Spacing="20" Padding="8">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="&quot;Why can't I assign more money?&quot;" FontWeight="SemiBold" FontSize="16" />
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            Most often: Ready to Assign is $0.
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            To fix this: Add income, or move money from another envelope.
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            NextLedger prevents over-assigning to protect your plan.
+                        </TextBlock>
+                    </StackPanel>
+
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="&quot;My numbers look off&quot;" FontWeight="SemiBold" FontSize="16" />
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            Try this first:
+                        </TextBlock>
+                        <StackPanel Spacing="4" Margin="16,0,0,0">
+                            <TextBlock Text="1. Make sure all recent transactions are entered or imported" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="2. Check for overspending" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="3. Reconcile the account" Opacity="0.8" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8" Margin="0,8,0,0">
+                            If something still doesn't look right, use Copy diagnostics and ask for help.
+                        </TextBlock>
+                    </StackPanel>
+
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="&quot;Why did import skip some transactions?&quot;" FontWeight="SemiBold" FontSize="16" />
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            Skipped transactions are usually duplicates.
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            NextLedger shows this in the preview so you know exactly what happened.
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8" FontWeight="SemiBold">
+                            Nothing is silently ignored.
+                        </TextBlock>
+                    </StackPanel>
+                </StackPanel>
+            </Expander>
+
+            <!-- Diagnostics -->
+            <Expander Header="Help &amp; Diagnostics" HorizontalAlignment="Stretch">
+                <StackPanel Spacing="16" Padding="8">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="What are diagnostics?" FontWeight="SemiBold" FontSize="16" />
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            Diagnostics are a safe snapshot of app information that helps troubleshoot issues.
+                        </TextBlock>
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            They include:
+                        </TextBlock>
+                        <StackPanel Spacing="4" Margin="16,0,0,0">
+                            <TextBlock Text="• App version" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="• Database path" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="• Feature status" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="• Recent engine activity" Opacity="0.8" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <InfoBar IsOpen="True" IsClosable="False" Severity="Success"
+                                 Title="Privacy"
+                                 Message="Diagnostics do NOT include: Bank credentials, account balances, or transaction details." />
+                    </StackPanel>
+
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="When should I use 'Copy diagnostics'?" FontWeight="SemiBold" FontSize="16" />
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                            Use it when:
+                        </TextBlock>
+                        <StackPanel Spacing="4" Margin="16,0,0,0">
+                            <TextBlock Text="• You're reporting a bug" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="• Something behaves unexpectedly" Opacity="0.8" TextWrapping="Wrap" />
+                            <TextBlock Text="• You're asking for support" Opacity="0.8" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <TextBlock TextWrapping="Wrap" Opacity="0.8" Margin="0,8,0,0">
+                            You can paste diagnostics into an email or issue report safely.
+                        </TextBlock>
+                    </StackPanel>
+                </StackPanel>
+            </Expander>
+
+            <!-- Final Reassurance -->
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" Padding="20">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="A Final Reassurance" FontWeight="SemiBold" FontSize="18" />
+                    <TextBlock TextWrapping="Wrap" Opacity="0.9" FontSize="15">
+                        Budgeting is not about being perfect.
+                    </TextBlock>
+                    <TextBlock TextWrapping="Wrap" Opacity="0.8">
+                        NextLedger is designed to:
+                    </TextBlock>
+                    <StackPanel Spacing="4" Margin="16,0,0,0">
+                        <TextBlock Text="• Let you change your mind" Opacity="0.8" TextWrapping="Wrap" />
+                        <TextBlock Text="• Show problems clearly" Opacity="0.8" TextWrapping="Wrap" />
+                        <TextBlock Text="• Help you fix things calmly" Opacity="0.8" TextWrapping="Wrap" />
+                        <TextBlock Text="• Never hide what's happening" Opacity="0.8" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <TextBlock TextWrapping="Wrap" Opacity="0.8" Margin="0,8,0,0">
+                        If something feels confusing, that's a signal — not a failure.
+                    </TextBlock>
+                    <TextBlock TextWrapping="Wrap" FontWeight="SemiBold" FontSize="16" Margin="0,8,0,0">
+                        You're in control.
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </Grid>
+    </ScrollViewer>
+</Page>

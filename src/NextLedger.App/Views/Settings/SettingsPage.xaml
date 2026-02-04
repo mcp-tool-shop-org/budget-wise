@@ -1,0 +1,245 @@
+<Page
+    x:Class="NextLedger.App.Views.Settings.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid x:Name="RootGrid" Padding="24" RowDefinitions="Auto,*" RowSpacing="16" MaxWidth="1000" HorizontalAlignment="Center">
+        <!-- Header -->
+        <StackPanel Orientation="Horizontal" Spacing="12">
+            <TextBlock Text="Settings" FontSize="28" FontWeight="SemiBold" />
+        </StackPanel>
+
+        <!-- Tabs -->
+        <Pivot Grid.Row="1">
+            <!-- Accounts Tab -->
+            <PivotItem Header="Accounts">
+                <ScrollViewer Padding="0,16,0,0">
+                    <StackPanel Spacing="24">
+                        <!-- New Account Form -->
+                        <StackPanel Spacing="12">
+                            <TextBlock Text="Add Account" Style="{StaticResource SubtitleTextBlockStyle}" />
+                            <Grid ColumnDefinitions="*,140,120,100,Auto" ColumnSpacing="12" RowDefinitions="Auto,Auto" RowSpacing="8">
+                                <TextBox PlaceholderText="Account name" Text="{Binding NewAccountName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                <ComboBox Grid.Column="1" ItemsSource="{Binding AccountTypes}" SelectedItem="{Binding NewAccountType, Mode=TwoWay}"
+                                          HorizontalAlignment="Stretch">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                <TextBox Grid.Column="2" PlaceholderText="Balance" Text="{Binding NewAccountBalance, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                <CheckBox Grid.Column="3" Content="On Budget" IsChecked="{Binding NewAccountOnBudget, Mode=TwoWay}" VerticalAlignment="Center" />
+                                <Button Grid.Column="4" Content="Add" Command="{Binding CreateAccountCommand}" Style="{StaticResource AccentButtonStyle}" />
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- Active Accounts List -->
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Active Accounts" Style="{StaticResource SubtitleTextBlockStyle}" />
+                            <InfoBar IsOpen="True" IsClosable="False" Severity="Informational"
+                                     Title="No accounts yet" Message="Add your first account above."
+                                     Visibility="{Binding Accounts, Converter={StaticResource CollectionEmptyToVisibilityConverter}}" />
+
+                            <ListView ItemsSource="{Binding Accounts}" SelectionMode="None">
+                                <ListView.ItemContainerStyle>
+                                    <Style TargetType="ListViewItem">
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Setter Property="Padding" Value="0" />
+                                        <Setter Property="Margin" Value="0,2" />
+                                    </Style>
+                                </ListView.ItemContainerStyle>
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid ColumnDefinitions="*,120,100,Auto,Auto" ColumnSpacing="12" Padding="12,8"
+                                              Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" CornerRadius="6">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                                <TextBlock Text="{Binding TypeDisplayName}" FontSize="12" Opacity="0.6" />
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="1" Text="{Binding BalanceText}" VerticalAlignment="Center" HorizontalAlignment="Right" />
+                                            <TextBlock Grid.Column="2" Text="{Binding IsOnBudget, Converter={StaticResource BoolToOnOffBudgetConverter}}"
+                                                       VerticalAlignment="Center" Opacity="0.7" />
+                                            <Button Grid.Column="3" Content="Edit" Command="{Binding DataContext.StartEditAccountCommand, ElementName=RootGrid}"
+                                                    CommandParameter="{Binding}" />
+                                            <Button Grid.Column="4" Content="Close" Command="{Binding DataContext.CloseAccountCommand, ElementName=RootGrid}"
+                                                    CommandParameter="{Binding}" ToolTipService.ToolTip="Close this account (can be reopened later)" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </StackPanel>
+
+                        <!-- Closed Accounts -->
+                        <StackPanel Spacing="8" Visibility="{Binding HasClosedAccounts, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <TextBlock Text="Closed Accounts" Style="{StaticResource SubtitleTextBlockStyle}" VerticalAlignment="Center" />
+                                <ToggleSwitch IsOn="{Binding ShowClosedAccounts, Mode=TwoWay}" OnContent="Show" OffContent="Hidden" />
+                            </StackPanel>
+
+                            <ListView ItemsSource="{Binding ClosedAccounts}" SelectionMode="None"
+                                      Visibility="{Binding ShowClosedAccounts, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <ListView.ItemContainerStyle>
+                                    <Style TargetType="ListViewItem">
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Setter Property="Padding" Value="0" />
+                                        <Setter Property="Margin" Value="0,2" />
+                                    </Style>
+                                </ListView.ItemContainerStyle>
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid ColumnDefinitions="*,120,Auto" ColumnSpacing="12" Padding="12,8"
+                                              Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" CornerRadius="6" Opacity="0.7">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                                <TextBlock Text="{Binding TypeDisplayName}" FontSize="12" Opacity="0.6" />
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="1" Text="{Binding BalanceText}" VerticalAlignment="Center" HorizontalAlignment="Right" />
+                                            <Button Grid.Column="2" Content="Reopen" Command="{Binding DataContext.ReopenAccountCommand, ElementName=RootGrid}"
+                                                    CommandParameter="{Binding}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </PivotItem>
+
+            <!-- Envelopes Tab -->
+            <PivotItem Header="Envelopes">
+                <ScrollViewer Padding="0,16,0,0">
+                    <StackPanel Spacing="24">
+                        <!-- New Envelope Form -->
+                        <StackPanel Spacing="12">
+                            <TextBlock Text="Add Envelope" Style="{StaticResource SubtitleTextBlockStyle}" />
+                            <Grid ColumnDefinitions="*,160,Auto,Auto" ColumnSpacing="12">
+                                <TextBox PlaceholderText="Envelope name" Text="{Binding NewEnvelopeName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                <AutoSuggestBox Grid.Column="1" PlaceholderText="Group (optional)" Text="{Binding NewEnvelopeGroup, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                ItemsSource="{Binding GroupNames}" />
+                                <ComboBox Grid.Column="2" ItemsSource="{Binding PredefinedColors}" SelectedItem="{Binding NewEnvelopeColor, Mode=TwoWay}" Width="80">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Width="40" Height="20" CornerRadius="4" Background="{Binding}" />
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                <Button Grid.Column="3" Content="Add" Command="{Binding CreateEnvelopeCommand}" Style="{StaticResource AccentButtonStyle}" />
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- Active Envelopes List -->
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Active Envelopes" Style="{StaticResource SubtitleTextBlockStyle}" />
+                            <InfoBar IsOpen="True" IsClosable="False" Severity="Informational"
+                                     Title="No envelopes yet" Message="Add your first envelope above."
+                                     Visibility="{Binding Envelopes, Converter={StaticResource CollectionEmptyToVisibilityConverter}}" />
+
+                            <ListView ItemsSource="{Binding Envelopes}" SelectionMode="None">
+                                <ListView.ItemContainerStyle>
+                                    <Style TargetType="ListViewItem">
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Setter Property="Padding" Value="0" />
+                                        <Setter Property="Margin" Value="0,2" />
+                                    </Style>
+                                </ListView.ItemContainerStyle>
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid ColumnDefinitions="Auto,*,140,Auto,Auto" ColumnSpacing="12" Padding="12,8"
+                                              Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" CornerRadius="6">
+                                            <Border Width="16" Height="16" CornerRadius="8" Background="{Binding Color}" VerticalAlignment="Center" />
+                                            <StackPanel Grid.Column="1">
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                                <TextBlock Text="{Binding GroupName}" FontSize="12" Opacity="0.6"
+                                                           Visibility="{Binding GroupName, Converter={StaticResource StringToVisibilityConverter}}" />
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="2" Text="{Binding GroupName}" VerticalAlignment="Center" Opacity="0.7"
+                                                       Visibility="{Binding GroupName, Converter={StaticResource StringToVisibilityConverter}}" />
+                                            <Button Grid.Column="3" Content="Edit" Command="{Binding DataContext.StartEditEnvelopeCommand, ElementName=RootGrid}"
+                                                    CommandParameter="{Binding}" />
+                                            <Button Grid.Column="4" Content="Archive" Command="{Binding DataContext.ArchiveEnvelopeCommand, ElementName=RootGrid}"
+                                                    CommandParameter="{Binding}" ToolTipService.ToolTip="Archive this envelope (can be restored later)" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </StackPanel>
+
+                        <!-- Archived Envelopes -->
+                        <StackPanel Spacing="8" Visibility="{Binding HasArchivedEnvelopes, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <TextBlock Text="Archived Envelopes" Style="{StaticResource SubtitleTextBlockStyle}" VerticalAlignment="Center" />
+                                <ToggleSwitch IsOn="{Binding ShowArchivedEnvelopes, Mode=TwoWay}" OnContent="Show" OffContent="Hidden" />
+                            </StackPanel>
+
+                            <ListView ItemsSource="{Binding ArchivedEnvelopes}" SelectionMode="None"
+                                      Visibility="{Binding ShowArchivedEnvelopes, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <ListView.ItemContainerStyle>
+                                    <Style TargetType="ListViewItem">
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Setter Property="Padding" Value="0" />
+                                        <Setter Property="Margin" Value="0,2" />
+                                    </Style>
+                                </ListView.ItemContainerStyle>
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12" Padding="12,8"
+                                              Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" CornerRadius="6" Opacity="0.7">
+                                            <Border Width="16" Height="16" CornerRadius="8" Background="{Binding Color}" VerticalAlignment="Center" />
+                                            <StackPanel Grid.Column="1">
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                                <TextBlock Text="{Binding GroupName}" FontSize="12" Opacity="0.6"
+                                                           Visibility="{Binding GroupName, Converter={StaticResource StringToVisibilityConverter}}" />
+                                            </StackPanel>
+                                            <Button Grid.Column="2" Content="Restore" Command="{Binding DataContext.UnarchiveEnvelopeCommand, ElementName=RootGrid}"
+                                                    CommandParameter="{Binding}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </PivotItem>
+        </Pivot>
+
+        <!-- Edit Account Dialog -->
+        <ContentDialog x:Name="EditAccountDialog"
+                       Title="Edit Account"
+                       PrimaryButtonText="Save"
+                       PrimaryButtonCommand="{Binding SaveAccountCommand}"
+                       CloseButtonText="Cancel"
+                       CloseButtonCommand="{Binding CancelEditAccountCommand}"
+                       DefaultButton="Primary">
+            <StackPanel Spacing="16" MinWidth="320">
+                <TextBox Header="Name" Text="{Binding EditAccountName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                <CheckBox Content="On Budget" IsChecked="{Binding EditAccountOnBudget, Mode=TwoWay}" />
+            </StackPanel>
+        </ContentDialog>
+
+        <!-- Edit Envelope Dialog -->
+        <ContentDialog x:Name="EditEnvelopeDialog"
+                       Title="Edit Envelope"
+                       PrimaryButtonText="Save"
+                       PrimaryButtonCommand="{Binding SaveEnvelopeCommand}"
+                       CloseButtonText="Cancel"
+                       CloseButtonCommand="{Binding CancelEditEnvelopeCommand}"
+                       DefaultButton="Primary">
+            <StackPanel Spacing="16" MinWidth="320">
+                <TextBox Header="Name" Text="{Binding EditEnvelopeName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                <AutoSuggestBox Header="Group" Text="{Binding EditEnvelopeGroup, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                ItemsSource="{Binding GroupNames}" PlaceholderText="(none)" />
+                <ComboBox Header="Color" ItemsSource="{Binding PredefinedColors}" SelectedItem="{Binding EditEnvelopeColor, Mode=TwoWay}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border Width="60" Height="24" CornerRadius="4" Background="{Binding}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </StackPanel>
+        </ContentDialog>
+    </Grid>
+</Page>
