@@ -150,6 +150,27 @@ public static class DatabaseSchema
         CREATE INDEX IF NOT EXISTS IX_TransactionSplits_EnvelopeId_TransactionId ON TransactionSplits(EnvelopeId, TransactionId);
         """;
 
+    /// <summary>
+    /// Stores XRPL balance snapshots for tracking changes over time.
+    /// Read-only, observation only - no execution.
+    /// </summary>
+    public const string CreateXrplBalanceSnapshotsTable = """
+        CREATE TABLE IF NOT EXISTS XrplBalanceSnapshots (
+            Id TEXT PRIMARY KEY,
+            AccountId TEXT NOT NULL,
+            BalanceDrops INTEGER NOT NULL,
+            ReserveDrops INTEGER NOT NULL,
+            OwnerCount INTEGER NOT NULL,
+            LedgerIndex INTEGER NOT NULL,
+            Timestamp TEXT NOT NULL,
+            CreatedAt TEXT NOT NULL,
+            FOREIGN KEY (AccountId) REFERENCES Accounts(Id)
+        );
+        CREATE INDEX IF NOT EXISTS IX_XrplBalanceSnapshots_AccountId ON XrplBalanceSnapshots(AccountId);
+        CREATE INDEX IF NOT EXISTS IX_XrplBalanceSnapshots_AccountId_Timestamp ON XrplBalanceSnapshots(AccountId, Timestamp);
+        CREATE INDEX IF NOT EXISTS IX_XrplBalanceSnapshots_LedgerIndex ON XrplBalanceSnapshots(LedgerIndex);
+        """;
+
     public static readonly string[] AllTables =
     [
         CreateAccountsTable,
@@ -158,6 +179,7 @@ public static class DatabaseSchema
         CreateBudgetPeriodsTable,
         CreateEnvelopeAllocationsTable,
         CreatePayeesTable,
-        CreateTransactionSplitsTable
+        CreateTransactionSplitsTable,
+        CreateXrplBalanceSnapshotsTable
     ];
 }

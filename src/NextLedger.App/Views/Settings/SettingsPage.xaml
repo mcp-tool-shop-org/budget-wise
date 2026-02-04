@@ -18,6 +18,47 @@
             <PivotItem Header="Accounts">
                 <ScrollViewer Padding="0,16,0,0">
                     <StackPanel Spacing="24">
+                        <!-- Net Worth Summary -->
+                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" Padding="16">
+                            <Grid ColumnDefinitions="*,*,*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="24" RowSpacing="8">
+                                <!-- Row 0: Title -->
+                                <TextBlock Text="Net Worth Overview" Style="{StaticResource SubtitleTextBlockStyle}" Grid.ColumnSpan="4" />
+
+                                <!-- Row 1: Main metrics -->
+                                <StackPanel Grid.Row="1">
+                                    <TextBlock Text="Net Worth" FontSize="12" Opacity="0.7" />
+                                    <TextBlock Text="{Binding NetWorthText}" FontSize="20" FontWeight="Bold" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="1" Grid.Column="1">
+                                    <TextBlock Text="Total Assets" FontSize="12" Opacity="0.7" />
+                                    <TextBlock Text="{Binding TotalAssetsText}" FontSize="16" Foreground="ForestGreen" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="1" Grid.Column="2">
+                                    <TextBlock Text="Total Liabilities" FontSize="12" Opacity="0.7" />
+                                    <TextBlock Text="{Binding TotalLiabilitiesText}" FontSize="16" Foreground="Tomato" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="1" Grid.Column="3" Visibility="{Binding HasXrpAccounts, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="XRP (External)" FontSize="12" Opacity="0.7" />
+                                        <FontIcon Glyph="&#xE72E;" FontSize="10" Opacity="0.5" ToolTipService.ToolTip="Externally tracked, read-only" />
+                                    </StackPanel>
+                                    <TextBlock Text="{Binding XrpTotalText}" FontSize="16" />
+                                </StackPanel>
+
+                                <!-- Row 2: Budget breakdown -->
+                                <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="16">
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="On Budget:" FontSize="12" Opacity="0.7" />
+                                        <TextBlock Text="{Binding TotalOnBudgetText}" FontSize="12" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="Off Budget:" FontSize="12" Opacity="0.7" />
+                                        <TextBlock Text="{Binding TotalOffBudgetText}" FontSize="12" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
                         <!-- New Account Form -->
                         <StackPanel Spacing="12">
                             <TextBlock Text="Add Account" Style="{StaticResource SubtitleTextBlockStyle}" />
@@ -115,8 +156,8 @@
                     <StackPanel Spacing="24">
                         <!-- XRPL Explanation Banner -->
                         <InfoBar IsOpen="True" IsClosable="False" Severity="Informational"
-                                 Title="External Ledger Tracking"
-                                 Message="Track XRPL addresses to view on-chain balances. NextLedger is read-only and non-custodial — it cannot send or sign transactions." />
+                                 Title="View-Only External Ledger"
+                                 Message="Track public XRPL addresses to view on-chain balances. NextLedger cannot move, send, or sign XRP transactions — it only observes what happens on-chain." />
 
                         <!-- Track New XRPL Address Form -->
                         <StackPanel Spacing="12">
@@ -160,19 +201,23 @@
                                 </ListView.ItemContainerStyle>
                                 <ListView.ItemTemplate>
                                     <DataTemplate>
-                                        <Grid ColumnDefinitions="*,Auto,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="4" Padding="12,10"
+                                        <Grid ColumnDefinitions="*,Auto,Auto,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="4" Padding="12,10"
                                               Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" CornerRadius="6">
-                                            <!-- Row 0: Name + Balance + Sync -->
+                                            <!-- Row 0: Name + Balance + Buttons -->
                                             <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="15" />
                                             <TextBlock Grid.Column="1" Text="{Binding BalanceText}" FontWeight="SemiBold" FontSize="15"
                                                        VerticalAlignment="Center" HorizontalAlignment="Right" />
-                                            <Button Grid.Column="2" Content="Sync" Padding="8,4"
+                                            <Button Grid.Column="2" Content="View" Padding="8,4"
+                                                    Command="{Binding DataContext.ViewXrplAccountDetailCommand, ElementName=RootGrid}"
+                                                    CommandParameter="{Binding}"
+                                                    ToolTipService.ToolTip="View on-chain transaction history" />
+                                            <Button Grid.Column="3" Content="Sync" Padding="8,4"
                                                     Command="{Binding DataContext.SyncXrplAccountCommand, ElementName=RootGrid}"
                                                     CommandParameter="{Binding}"
                                                     ToolTipService.ToolTip="Fetch latest balance from XRPL" />
 
                                             <!-- Row 1: Address + Network -->
-                                            <StackPanel Grid.Row="1" Grid.ColumnSpan="3" Orientation="Horizontal" Spacing="8">
+                                            <StackPanel Grid.Row="1" Grid.ColumnSpan="4" Orientation="Horizontal" Spacing="8">
                                                 <TextBlock Text="{Binding ExternalAddress}" FontSize="12" Opacity="0.7" FontFamily="Consolas" />
                                                 <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" Padding="6,2" CornerRadius="4">
                                                     <TextBlock Text="{Binding ExternalNetwork}" FontSize="11" Opacity="0.8" />
@@ -184,6 +229,72 @@
                             </ListView>
                         </StackPanel>
 
+                        <!-- XRPL Account Detail Panel (Transaction Timeline) -->
+                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" Padding="16"
+                                Visibility="{Binding IsXrplDetailVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <StackPanel Spacing="12">
+                                <!-- Header with Close -->
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel>
+                                        <TextBlock Text="On-Chain Activity" Style="{StaticResource SubtitleTextBlockStyle}" />
+                                        <TextBlock Text="{Binding SelectedXrplAccount.Name}" FontSize="13" Opacity="0.7" />
+                                    </StackPanel>
+                                    <Button Grid.Column="1" Content="Close" Command="{Binding CloseXrplDetailCommand}" Padding="8,4" />
+                                </Grid>
+
+                                <!-- Reconciliation Status -->
+                                <Border Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" CornerRadius="6" Padding="12">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Reconciliation Status" FontWeight="SemiBold" FontSize="13" />
+                                        <TextBlock Text="{Binding XrplReconciliationStatus}" TextWrapping="Wrap" FontSize="12" Opacity="0.9" />
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Transaction List Header -->
+                                <TextBlock Text="Recent Transactions (On-Chain)" FontWeight="SemiBold" FontSize="13" />
+                                <TextBlock Text="Read-only view of validated XRPL transactions. NextLedger cannot edit or categorize these."
+                                           FontSize="11" Opacity="0.6" />
+
+                                <!-- Loading indicator -->
+                                <ProgressRing IsActive="{Binding IsLoadingXrplDetail}" Width="24" Height="24"
+                                              Visibility="{Binding IsLoadingXrplDetail, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+                                <!-- Transaction List -->
+                                <ListView ItemsSource="{Binding XrplTransactions}" SelectionMode="None" MaxHeight="300">
+                                    <ListView.ItemContainerStyle>
+                                        <Style TargetType="ListViewItem">
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                            <Setter Property="Padding" Value="0" />
+                                            <Setter Property="Margin" Value="0,2" />
+                                        </Style>
+                                    </ListView.ItemContainerStyle>
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="2"
+                                                  Padding="10,8" Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" CornerRadius="4">
+                                                <!-- Row 0: Icon + Summary + Amount -->
+                                                <FontIcon Glyph="{Binding CategoryIcon}" FontSize="14" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="1" Text="{Binding Summary}" FontSize="12" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Grid.Column="2" Text="{Binding AmountText}"
+                                                           FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Right" />
+
+                                                <!-- Row 1: Timestamp + Hash (text only, link handled in code) -->
+                                                <StackPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="12">
+                                                    <TextBlock Text="{Binding TimestampText}" FontSize="10" Opacity="0.6" />
+                                                    <TextBlock Text="View on XRPL Explorer →" FontSize="10" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+
+                                <!-- Empty state -->
+                                <TextBlock Text="No transactions found. The account may be new or not yet activated."
+                                           FontSize="12" Opacity="0.6" TextAlignment="Center"
+                                           Visibility="{Binding XrplTransactions, Converter={StaticResource CollectionEmptyToVisibilityConverter}}" />
+                            </StackPanel>
+                        </Border>
+
                         <!-- Reserve Explanation -->
                         <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" Padding="16">
                             <StackPanel Spacing="8">
@@ -192,6 +303,13 @@
                                            Text="XRPL requires each account to maintain a minimum reserve. This reserve is not spendable and helps prevent ledger spam." />
                                 <TextBlock FontSize="12" Opacity="0.7" Text="• Base reserve: 10 XRP (required to activate account)" />
                                 <TextBlock FontSize="12" Opacity="0.7" Text="• Owner reserve: 2 XRP per owned object (trust lines, offers, etc.)" />
+                                <Border Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" CornerRadius="4" Padding="8" Margin="0,8,0,0">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <FontIcon Glyph="&#xE72E;" FontSize="12" />
+                                        <TextBlock Text="NextLedger cannot move your XRP. Use your wallet to send transactions."
+                                                   FontSize="11" Opacity="0.8" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
                             </StackPanel>
                         </Border>
                     </StackPanel>

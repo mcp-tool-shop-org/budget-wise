@@ -149,4 +149,33 @@ public interface IBudgetEngine
     /// Calculates the reserve requirement for an XRPL account.
     /// </summary>
     Task<XrplReserveInfo> GetXrplReserveInfoAsync(int ownerCount, CancellationToken ct = default);
+
+    // --- XRPL Interpretation Layer (Phase 7) ---
+
+    /// <summary>
+    /// Gets transaction history for an XRPL account. Read-only, no editing.
+    /// </summary>
+    Task<XrplTransactionHistoryResult> GetXrplTransactionHistoryAsync(
+        Guid accountId,
+        int limit = 20,
+        string? marker = null,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets the balance change explanation between the last two syncs.
+    /// "My XRP balance changed — explain it to me."
+    /// </summary>
+    Task<XrplBalanceChangeDto?> GetXrplBalanceChangeAsync(Guid accountId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets reconciliation status comparing NextLedger's cache vs on-chain balance.
+    /// "Does NextLedger agree with XRPL?"
+    /// </summary>
+    Task<XrplReconciliationDto> GetXrplReconciliationAsync(Guid accountId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets account summary including XRP external accounts for net worth calculation.
+    /// XRP is marked as external and non-spendable from the app.
+    /// </summary>
+    Task<AccountsSummaryDto> GetAccountsSummaryAsync(CancellationToken ct = default);
 }

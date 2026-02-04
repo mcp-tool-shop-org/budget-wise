@@ -169,7 +169,7 @@ public class Account : Entity
             SortOrder = 0,
             ExternalAddress = xrplAddress.Trim(),
             ExternalNetwork = network.ToLowerInvariant(),
-            Note = "Externally reconciled (XRPL). Read-only."
+            Note = "XRPL external ledger (view-only). NextLedger observes but cannot move XRP."
         };
 
         return account;

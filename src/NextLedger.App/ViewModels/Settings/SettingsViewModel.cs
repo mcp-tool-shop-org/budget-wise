@@ -31,6 +31,29 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private string _errorText = string.Empty;
 
+    // ========== Net Worth Summary ==========
+
+    [ObservableProperty]
+    private string _netWorthText = "$0.00";
+
+    [ObservableProperty]
+    private string _totalAssetsText = "$0.00";
+
+    [ObservableProperty]
+    private string _totalLiabilitiesText = "$0.00";
+
+    [ObservableProperty]
+    private string _totalOnBudgetText = "$0.00";
+
+    [ObservableProperty]
+    private string _totalOffBudgetText = "$0.00";
+
+    [ObservableProperty]
+    private string _xrpTotalText = "0.000000 XRP";
+
+    [ObservableProperty]
+    private bool _hasXrpAccounts;
+
     // ========== Accounts ==========
 
     [ObservableProperty]
@@ -211,6 +234,19 @@ public sealed partial class SettingsViewModel : ObservableObject
                     a.ReserveXrp,
                     a.SpendableXrpBalance))
                 .ToArray();
+
+            // Load net worth summary (includes XRP)
+            var summary = await _engine.GetAccountsSummaryAsync();
+            NetWorthText = summary.NetWorth.ToFormattedString();
+            TotalAssetsText = summary.TotalAssets.ToFormattedString();
+            TotalLiabilitiesText = summary.TotalLiabilities.ToFormattedString();
+            TotalOnBudgetText = summary.TotalOnBudget.ToFormattedString();
+            TotalOffBudgetText = summary.TotalOffBudget.ToFormattedString();
+
+            // Calculate XRP total (external ledger accounts only)
+            var xrpTotal = xrplAccounts.Sum(a => a.Balance.Amount);
+            XrpTotalText = $"{xrpTotal:N6} XRP";
+            HasXrpAccounts = xrplAccounts.Count > 0;
 
             OnPropertyChanged(nameof(HasClosedAccounts));
             OnPropertyChanged(nameof(HasArchivedEnvelopes));
@@ -555,6 +591,90 @@ public sealed partial class SettingsViewModel : ObservableObject
         }
     }
 
+    // ========== XRPL Detail View Commands ==========
+
+    [ObservableProperty]
+    private XrplAccountRow? _selectedXrplAccount;
+
+    [ObservableProperty]
+    private IReadOnlyList<XrplTransactionRow> _xrplTransactions = Array.Empty<XrplTransactionRow>();
+
+    [ObservableProperty]
+    private string _xrplReconciliationStatus = string.Empty;
+
+    [ObservableProperty]
+    private bool _isXrplDetailVisible;
+
+    [ObservableProperty]
+    private bool _isLoadingXrplDetail;
+
+    [RelayCommand]
+    private async Task ViewXrplAccountDetailAsync(XrplAccountRow account)
+    {
+        SelectedXrplAccount = account;
+        IsXrplDetailVisible = true;
+        IsLoadingXrplDetail = true;
+
+        try
+        {
+            // Load transaction history
+            var historyResult = await _engine.GetXrplTransactionHistoryAsync(account.Id, 20);
+            if (historyResult.Success)
+            {
+                XrplTransactions = historyResult.Transactions
+                    .Select(tx => new XrplTransactionRow(
+                        tx.Hash,
+                        tx.Timestamp,
+                        tx.TransactionType,
+                        tx.Category.ToString(),
+                        tx.Summary,
+                        tx.AmountDrops,
+                        tx.AmountXrp,
+                        tx.FeeXrp,
+                        tx.ExplorerUrl,
+                        tx.IsSuccess,
+                        FormatCategoryIcon(tx.Category)))
+                    .ToArray();
+            }
+            else
+            {
+                XrplTransactions = Array.Empty<XrplTransactionRow>();
+                _notifications.ShowWarning("Transaction history", historyResult.ErrorMessage ?? "Could not load transactions.");
+            }
+
+            // Load reconciliation status
+            var recon = await _engine.GetXrplReconciliationAsync(account.Id);
+            XrplReconciliationStatus = recon.Explanation;
+        }
+        catch (Exception ex)
+        {
+            _notifications.ShowError("Load failed", ex.Message);
+        }
+        finally
+        {
+            IsLoadingXrplDetail = false;
+        }
+    }
+
+    [RelayCommand]
+    private void CloseXrplDetail()
+    {
+        IsXrplDetailVisible = false;
+        SelectedXrplAccount = null;
+        XrplTransactions = Array.Empty<XrplTransactionRow>();
+        XrplReconciliationStatus = string.Empty;
+    }
+
+    private static string FormatCategoryIcon(XrplTransactionCategory category) => category switch
+    {
+        XrplTransactionCategory.IncomingPayment => "\uE896", // Download arrow
+        XrplTransactionCategory.OutgoingPayment => "\uE898", // Upload arrow
+        XrplTransactionCategory.FeeOnly => "\uE8C8", // Tag
+        XrplTransactionCategory.ReserveChange => "\uE72E", // Lock
+        XrplTransactionCategory.AccountActivation => "\uE8FA", // Star
+        _ => "\uE946" // Info
+    };
+
     // ========== Row Models ==========
 
     public sealed record AccountRow(
@@ -584,4 +704,27 @@ public sealed partial class SettingsViewModel : ObservableObject
         long? ExternalReserveDrops,
         decimal? ReserveXrp,
         decimal? SpendableXrpBalance);
+
+    /// <summary>
+    /// Row model for XRPL transaction timeline. Read-only, no editing.
+    /// </summary>
+    public sealed record XrplTransactionRow(
+        string Hash,
+        DateTime Timestamp,
+        string TransactionType,
+        string Category,
+        string Summary,
+        long AmountDrops,
+        decimal AmountXrp,
+        decimal FeeXrp,
+        string ExplorerUrl,
+        bool IsSuccess,
+        string CategoryIcon)
+    {
+        /// <summary>Formatted amount for display.</summary>
+        public string AmountText => $"{AmountXrp:N6} XRP";
+
+        /// <summary>Formatted timestamp for display.</summary>
+        public string TimestampText => Timestamp.ToString("yyyy-MM-dd HH:mm");
+    }
 }

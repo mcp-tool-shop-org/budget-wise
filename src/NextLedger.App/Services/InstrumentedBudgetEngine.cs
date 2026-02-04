@@ -230,6 +230,32 @@ public sealed class InstrumentedBudgetEngine : IBudgetEngine
             operation: "GetXrplReserveInfo",
             action: () => _inner.GetXrplReserveInfoAsync(ownerCount, ct));
 
+    // --- XRPL Interpretation Layer (Phase 7) ---
+
+    public Task<XrplTransactionHistoryResult> GetXrplTransactionHistoryAsync(
+        Guid accountId,
+        int limit = 20,
+        string? marker = null,
+        CancellationToken ct = default)
+        => MeasureAsync(
+            operation: "GetXrplTransactionHistory",
+            action: () => _inner.GetXrplTransactionHistoryAsync(accountId, limit, marker, ct));
+
+    public Task<XrplBalanceChangeDto?> GetXrplBalanceChangeAsync(Guid accountId, CancellationToken ct = default)
+        => MeasureAsync(
+            operation: "GetXrplBalanceChange",
+            action: () => _inner.GetXrplBalanceChangeAsync(accountId, ct));
+
+    public Task<XrplReconciliationDto> GetXrplReconciliationAsync(Guid accountId, CancellationToken ct = default)
+        => MeasureAsync(
+            operation: "GetXrplReconciliation",
+            action: () => _inner.GetXrplReconciliationAsync(accountId, ct));
+
+    public Task<AccountsSummaryDto> GetAccountsSummaryAsync(CancellationToken ct = default)
+        => MeasureAsync(
+            operation: "GetAccountsSummary",
+            action: () => _inner.GetAccountsSummaryAsync(ct));
+
     private async Task<T> MeasureAsync<T>(string operation, Func<Task<T>> action)
     {
         var stopwatch = Stopwatch.StartNew();

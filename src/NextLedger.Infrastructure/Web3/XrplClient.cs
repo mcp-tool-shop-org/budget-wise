@@ -218,4 +218,280 @@ public sealed partial class XrplClient : IXrplClient
 
     [GeneratedRegex(@"^r[1-9A-HJ-NP-Za-km-z]{24,34}$")]
     private static partial Regex XrplAddressRegex();
+
+    public async Task<XrplTransactionHistoryResult> GetTransactionHistoryAsync(
+        XrplTransactionHistoryRequest request,
+        string address,
+        CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(address))
+            return XrplTransactionHistoryResult.Fail(address ?? "", "Address is required.");
+
+        if (!ValidateAddressFormat(address))
+            return XrplTransactionHistoryResult.Fail(address, "Invalid XRPL address format.");
+
+        try
+        {
+            var args = new Dictionary<string, object?>
+            {
+                ["account"] = address,
+                ["ledger_index_min"] = request.MinLedgerIndex ?? -1,
+                ["ledger_index_max"] = request.MaxLedgerIndex ?? -1,
+                ["limit"] = Math.Min(request.Limit, 100), // Cap at 100
+                ["forward"] = false // Newest first
+            };
+
+            if (!string.IsNullOrEmpty(request.Marker))
+                args["marker"] = request.Marker;
+
+            var response = await _rpc.CallAsync<JsonElement>("account_tx", new object?[] { args }, ct);
+
+            if (!response.Success || response.Error is not null)
+            {
+                var errorMsg = response.Error?.Message ?? "Unknown error";
+                if (errorMsg.Contains("actNotFound", StringComparison.OrdinalIgnoreCase))
+                    return XrplTransactionHistoryResult.Fail(address, "Account not found or not activated.");
+
+                return XrplTransactionHistoryResult.Fail(address, errorMsg);
+            }
+
+            var result = response.Result;
+            if (result.ValueKind == JsonValueKind.Undefined || result.ValueKind == JsonValueKind.Null)
+                return XrplTransactionHistoryResult.Fail(address, "Empty response from XRPL node.");
+
+            var transactions = new List<XrplTransactionDto>();
+
+            if (result.TryGetProperty("transactions", out var txArray) && txArray.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var txWrapper in txArray.EnumerateArray())
+                {
+                    var tx = ParseTransaction(txWrapper, address);
+                    if (tx is not null)
+                        transactions.Add(tx);
+                }
+            }
+
+            // Get marker for pagination
+            string? nextMarker = null;
+            if (result.TryGetProperty("marker", out var markerProp))
+            {
+                nextMarker = markerProp.ToString();
+            }
+
+            return XrplTransactionHistoryResult.Ok(address, transactions, nextMarker);
+        }
+        catch (Exception ex)
+        {
+            return XrplTransactionHistoryResult.Fail(address, $"Failed to fetch transaction history: {ex.Message}");
+        }
+    }
+
+    public async Task<XrplReconciliationDto> GetReconciliationStatusAsync(
+        string address,
+        long cachedBalanceDrops,
+        DateTime? cachedSyncAt,
+        CancellationToken ct = default)
+    {
+        var accountInfo = await GetAccountInfoTypedAsync(address, ct);
+
+        var xrplBalance = accountInfo.Success && accountInfo.BalanceDrops.HasValue
+            ? accountInfo.BalanceDrops.Value
+            : cachedBalanceDrops; // Fallback to cached if fetch fails
+
+        return new XrplReconciliationDto
+        {
+            XrplBalanceDrops = xrplBalance,
+            NextLedgerBalanceDrops = cachedBalanceDrops,
+            XrplFetchedAt = DateTime.UtcNow,
+            NextLedgerSyncedAt = cachedSyncAt,
+            LedgerIndex = accountInfo.LedgerIndex
+        };
+    }
+
+    private static XrplTransactionDto? ParseTransaction(JsonElement txWrapper, string accountAddress)
+    {
+        try
+        {
+            if (!txWrapper.TryGetProperty("tx", out var tx))
+                return null;
+
+            // Get basic fields
+            var hash = tx.TryGetProperty("hash", out var hashProp) ? hashProp.GetString() ?? "" : "";
+            var txType = tx.TryGetProperty("TransactionType", out var typeProp) ? typeProp.GetString() ?? "Unknown" : "Unknown";
+            var account = tx.TryGetProperty("Account", out var accProp) ? accProp.GetString() ?? "" : "";
+
+            // Parse timestamp from ripple epoch (seconds since 2000-01-01)
+            var timestamp = DateTime.UtcNow;
+            if (tx.TryGetProperty("date", out var dateProp))
+            {
+                var rippleTime = dateProp.GetInt64();
+                // Ripple epoch is 2000-01-01 00:00:00 UTC
+                timestamp = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddSeconds(rippleTime);
+            }
+
+            // Get fee
+            var feeDrops = 0L;
+            if (tx.TryGetProperty("Fee", out var feeProp))
+            {
+                var feeStr = feeProp.GetString();
+                if (!string.IsNullOrEmpty(feeStr) && long.TryParse(feeStr, out var parsed))
+                    feeDrops = parsed;
+            }
+
+            // Get ledger index
+            var ledgerIndex = 0L;
+            if (tx.TryGetProperty("ledger_index", out var ledgerProp))
+                ledgerIndex = ledgerProp.GetInt64();
+            else if (txWrapper.TryGetProperty("ledger_index", out var wrapperLedgerProp))
+                ledgerIndex = wrapperLedgerProp.GetInt64();
+
+            // Get result code
+            var resultCode = "unknown";
+            var isSuccess = false;
+            if (txWrapper.TryGetProperty("meta", out var meta))
+            {
+                if (meta.TryGetProperty("TransactionResult", out var resultProp))
+                {
+                    resultCode = resultProp.GetString() ?? "unknown";
+                    isSuccess = resultCode.Equals("tesSUCCESS", StringComparison.OrdinalIgnoreCase);
+                }
+            }
+
+            // Parse amount and determine direction
+            var amountDrops = 0L;
+            string? counterparty = null;
+            var category = XrplTransactionCategory.Other;
+
+            var isOutgoing = account.Equals(accountAddress, StringComparison.OrdinalIgnoreCase);
+
+            if (txType == "Payment")
+            {
+                var destination = tx.TryGetProperty("Destination", out var destProp) ? destProp.GetString() ?? "" : "";
+                counterparty = isOutgoing ? destination : account;
+
+                // Parse Amount field
+                if (tx.TryGetProperty("Amount", out var amountProp))
+                {
+                    if (amountProp.ValueKind == JsonValueKind.String)
+                    {
+                        // Native XRP
+                        var amountStr = amountProp.GetString();
+                        if (!string.IsNullOrEmpty(amountStr) && long.TryParse(amountStr, out var parsed))
+                            amountDrops = parsed;
+                    }
+                    // Issued currency would be an object - skip for now
+                }
+
+                // Check delivered amount in meta
+                if (meta.ValueKind != JsonValueKind.Undefined)
+                {
+                    if (meta.TryGetProperty("delivered_amount", out var deliveredProp))
+                    {
+                        if (deliveredProp.ValueKind == JsonValueKind.String)
+                        {
+                            var deliveredStr = deliveredProp.GetString();
+                            if (!string.IsNullOrEmpty(deliveredStr) && long.TryParse(deliveredStr, out var delivered))
+                                amountDrops = delivered;
+                        }
+                    }
+                }
+
+                // Set direction and category
+                if (isOutgoing)
+                {
+                    amountDrops = -Math.Abs(amountDrops); // Outgoing is negative
+                    category = XrplTransactionCategory.OutgoingPayment;
+                }
+                else
+                {
+                    amountDrops = Math.Abs(amountDrops); // Incoming is positive
+                    category = XrplTransactionCategory.IncomingPayment;
+                }
+            }
+            else if (txType == "TrustSet" || txType == "OfferCreate" || txType == "OfferCancel")
+            {
+                // These affect reserves but don't transfer XRP directly
+                category = XrplTransactionCategory.ReserveChange;
+                amountDrops = 0;
+            }
+            else if (txType == "AccountSet" || txType == "SetRegularKey" || txType == "SignerListSet")
+            {
+                // Fee-only transactions
+                category = XrplTransactionCategory.FeeOnly;
+                amountDrops = 0;
+            }
+            else
+            {
+                category = XrplTransactionCategory.Other;
+            }
+
+            // Build summary
+            var summary = BuildTransactionSummary(txType, category, amountDrops, counterparty, feeDrops, isSuccess);
+
+            return new XrplTransactionDto
+            {
+                Hash = hash,
+                Timestamp = timestamp,
+                TransactionType = txType,
+                Category = category,
+                Counterparty = counterparty,
+                AmountDrops = amountDrops,
+                FeeDrops = feeDrops,
+                LedgerIndex = ledgerIndex,
+                IsSuccess = isSuccess,
+                ResultCode = resultCode,
+                Summary = summary
+            };
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string BuildTransactionSummary(
+        string txType,
+        XrplTransactionCategory category,
+        long amountDrops,
+        string? counterparty,
+        long feeDrops,
+        bool isSuccess)
+    {
+        if (!isSuccess)
+            return $"Failed {txType} transaction.";
+
+        var amountXrp = Math.Abs(amountDrops) / 1_000_000m;
+        var feeXrp = feeDrops / 1_000_000m;
+
+        return category switch
+        {
+            XrplTransactionCategory.IncomingPayment =>
+                $"Received {amountXrp:N6} XRP from {TruncateAddress(counterparty)}.",
+
+            XrplTransactionCategory.OutgoingPayment =>
+                $"Sent {amountXrp:N6} XRP to {TruncateAddress(counterparty)}. Fee: {feeXrp:N6} XRP.",
+
+            XrplTransactionCategory.FeeOnly =>
+                $"{txType} transaction. Fee: {feeXrp:N6} XRP.",
+
+            XrplTransactionCategory.ReserveChange =>
+                $"{txType} transaction affected reserve. Fee: {feeXrp:N6} XRP.",
+
+            XrplTransactionCategory.AccountActivation =>
+                $"Account activated with {amountXrp:N6} XRP.",
+
+            _ => $"{txType} transaction. Fee: {feeXrp:N6} XRP."
+        };
+    }
+
+    private static string TruncateAddress(string? address)
+    {
+        if (string.IsNullOrEmpty(address))
+            return "unknown";
+
+        if (address.Length <= 12)
+            return address;
+
+        return $"{address[..6]}...{address[^4..]}";
+    }
 }

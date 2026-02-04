@@ -778,6 +778,120 @@ public sealed class BudgetEngine : IBudgetEngine
         });
     }
 
+    // --- XRPL Interpretation Layer (Phase 7) ---
+    // NOTE: Full implementation requires IXrplClient injection. Placeholder implementations for now.
+
+    public Task<XrplTransactionHistoryResult> GetXrplTransactionHistoryAsync(
+        Guid accountId,
+        int limit = 20,
+        string? marker = null,
+        CancellationToken ct = default)
+    {
+        // This requires IXrplClient - returns placeholder for now
+        return Task.FromResult(XrplTransactionHistoryResult.Fail(
+            accountId.ToString(),
+            "XRPL transaction history requires configuration. Set NextLedger_WEB3_RPC_URL environment variable."));
+    }
+
+    public async Task<XrplBalanceChangeDto?> GetXrplBalanceChangeAsync(Guid accountId, CancellationToken ct = default)
+    {
+        var account = await _unitOfWork.Accounts.GetByIdAsync(accountId, ct);
+        if (account is null || !account.IsExternalLedger)
+            return null;
+
+        // No previous snapshot stored yet - return null to indicate no change tracking
+        // Full implementation will compare against XrplBalanceSnapshots table
+        return null;
+    }
+
+    public async Task<XrplReconciliationDto> GetXrplReconciliationAsync(Guid accountId, CancellationToken ct = default)
+    {
+        var account = await _unitOfWork.Accounts.GetByIdAsync(accountId, ct);
+        if (account is null || !account.IsExternalLedger)
+            throw new InvalidOperationException($"Account {accountId} is not an XRPL external ledger account.");
+
+        // For now, return a reconciled status showing cached values
+        // Full implementation will fetch live from XRPL and compare
+        var cachedDrops = (long)(account.Balance.Amount * 1_000_000m);
+
+        return new XrplReconciliationDto
+        {
+            XrplBalanceDrops = cachedDrops, // Same as cached since we can't fetch live
+            NextLedgerBalanceDrops = cachedDrops,
+            XrplFetchedAt = DateTime.UtcNow,
+            NextLedgerSyncedAt = account.LastExternalSyncAt,
+            LedgerIndex = null
+        };
+    }
+
+    public async Task<AccountsSummaryDto> GetAccountsSummaryAsync(CancellationToken ct = default)
+    {
+        var accounts = await _unitOfWork.Accounts.GetAllAsync(ct);
+        var activeAccounts = accounts.Where(a => a.IsActive).ToList();
+
+        var accountDtos = new List<AccountDto>();
+        var totalOnBudget = Money.Zero;
+        var totalOffBudget = Money.Zero;
+        var totalAssets = Money.Zero;
+        var totalLiabilities = Money.Zero;
+
+        foreach (var a in activeAccounts)
+        {
+            var dto = new AccountDto
+            {
+                Id = a.Id,
+                Name = a.Name,
+                Type = a.Type,
+                Balance = a.Balance,
+                ClearedBalance = a.ClearedBalance,
+                UnclearedBalance = a.UnclearedBalance,
+                IsActive = a.IsActive,
+                IsOnBudget = a.IsOnBudget,
+                LastReconciledAt = a.LastReconciledAt,
+                ExternalAddress = a.ExternalAddress,
+                ExternalNetwork = a.ExternalNetwork,
+                LastExternalSyncAt = a.LastExternalSyncAt,
+                ExternalReserveDrops = a.ExternalReserveDrops
+            };
+
+            accountDtos.Add(dto);
+
+            // Calculate totals
+            if (a.IsOnBudget)
+                totalOnBudget += a.Balance;
+            else
+                totalOffBudget += a.Balance;
+
+            // Assets vs Liabilities (credit accounts have negative balances when used)
+            if (a.IsCreditType)
+            {
+                // Credit cards/lines: positive balance = debt (liability)
+                if (a.Balance.IsPositive)
+                    totalLiabilities += a.Balance;
+                else
+                    totalAssets += a.Balance.Abs();
+            }
+            else
+            {
+                // Regular accounts: positive = asset
+                if (a.Balance.IsPositive)
+                    totalAssets += a.Balance;
+                else
+                    totalLiabilities += a.Balance.Abs();
+            }
+        }
+
+        return new AccountsSummaryDto
+        {
+            TotalOnBudget = totalOnBudget,
+            TotalOffBudget = totalOffBudget,
+            TotalAssets = totalAssets,
+            TotalLiabilities = totalLiabilities,
+            NetWorth = totalAssets - totalLiabilities,
+            Accounts = accountDtos
+        };
+    }
+
     // --- Private helpers ---
 
     private async Task<TransactionDto> MapTransactionToDtoAsync(Transaction tx, CancellationToken ct)

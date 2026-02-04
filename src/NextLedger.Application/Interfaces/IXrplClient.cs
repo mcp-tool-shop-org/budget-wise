@@ -49,4 +49,30 @@ public interface IXrplClient
     /// <param name="address">The address to validate.</param>
     /// <returns>True if the address format is valid.</returns>
     bool ValidateAddressFormat(string address);
+
+    /// <summary>
+    /// Gets transaction history for an XRPL address. Read-only.
+    /// Uses the account_tx RPC method to fetch validated transactions.
+    /// </summary>
+    /// <param name="request">Request parameters including address and pagination.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Transaction history result.</returns>
+    Task<XrplTransactionHistoryResult> GetTransactionHistoryAsync(
+        XrplTransactionHistoryRequest request,
+        string address,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// Compares the current on-chain balance with a cached value.
+    /// Returns reconciliation status without making changes.
+    /// </summary>
+    /// <param name="address">XRPL address to check.</param>
+    /// <param name="cachedBalanceDrops">NextLedger's cached balance in drops.</param>
+    /// <param name="cachedSyncAt">When the cache was last updated.</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task<XrplReconciliationDto> GetReconciliationStatusAsync(
+        string address,
+        long cachedBalanceDrops,
+        DateTime? cachedSyncAt,
+        CancellationToken ct = default);
 }
