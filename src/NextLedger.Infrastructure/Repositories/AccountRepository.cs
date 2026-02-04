@@ -35,10 +35,14 @@ public sealed class AccountRepository : BaseRepository<Account>, IAccountReposit
         var sql = $"""
             INSERT INTO {TableName}
             (Id, Name, Type, Balance, ClearedBalance, UnclearedBalance, Currency,
-             IsActive, IsOnBudget, SortOrder, Note, LastReconciledAt, CreatedAt, UpdatedAt)
+             IsActive, IsOnBudget, SortOrder, Note, LastReconciledAt,
+             ExternalAddress, ExternalNetwork, LastExternalSyncAt, ExternalReserveDrops,
+             CreatedAt, UpdatedAt)
             VALUES
             (@Id, @Name, @Type, @Balance, @ClearedBalance, @UnclearedBalance, @Currency,
-             @IsActive, @IsOnBudget, @SortOrder, @Note, @LastReconciledAt, @CreatedAt, @UpdatedAt)
+             @IsActive, @IsOnBudget, @SortOrder, @Note, @LastReconciledAt,
+             @ExternalAddress, @ExternalNetwork, @LastExternalSyncAt, @ExternalReserveDrops,
+             @CreatedAt, @UpdatedAt)
             """;
 
         await connection.ExecuteAsync(sql, new
@@ -55,6 +59,10 @@ public sealed class AccountRepository : BaseRepository<Account>, IAccountReposit
             entity.SortOrder,
             entity.Note,
             LastReconciledAt = entity.LastReconciledAt.HasValue ? ToDbString(entity.LastReconciledAt.Value) : null,
+            entity.ExternalAddress,
+            entity.ExternalNetwork,
+            LastExternalSyncAt = entity.LastExternalSyncAt.HasValue ? ToDbString(entity.LastExternalSyncAt.Value) : null,
+            entity.ExternalReserveDrops,
             CreatedAt = ToDbString(entity.CreatedAt),
             UpdatedAt = ToDbString(entity.UpdatedAt)
         });
@@ -78,6 +86,10 @@ public sealed class AccountRepository : BaseRepository<Account>, IAccountReposit
                 SortOrder = @SortOrder,
                 Note = @Note,
                 LastReconciledAt = @LastReconciledAt,
+                ExternalAddress = @ExternalAddress,
+                ExternalNetwork = @ExternalNetwork,
+                LastExternalSyncAt = @LastExternalSyncAt,
+                ExternalReserveDrops = @ExternalReserveDrops,
                 UpdatedAt = @UpdatedAt
             WHERE Id = @Id
             """;
@@ -96,6 +108,10 @@ public sealed class AccountRepository : BaseRepository<Account>, IAccountReposit
             entity.SortOrder,
             entity.Note,
             LastReconciledAt = entity.LastReconciledAt.HasValue ? ToDbString(entity.LastReconciledAt.Value) : null,
+            entity.ExternalAddress,
+            entity.ExternalNetwork,
+            LastExternalSyncAt = entity.LastExternalSyncAt.HasValue ? ToDbString(entity.LastExternalSyncAt.Value) : null,
+            entity.ExternalReserveDrops,
             UpdatedAt = ToDbString(entity.UpdatedAt)
         });
     }
@@ -132,26 +148,65 @@ public sealed class AccountRepository : BaseRepository<Account>, IAccountReposit
         return row is null ? null : MapToEntity(row);
     }
 
+    public async Task<IReadOnlyList<Account>> GetXrplAccountsAsync(CancellationToken ct = default)
+    {
+        var connection = await GetConnectionAsync(ct);
+        var sql = $"SELECT * FROM {TableName} WHERE Type = @Type AND IsActive = 1 ORDER BY SortOrder, Name";
+        var rows = await connection.QueryAsync(sql, new { Type = (int)AccountType.ExternalXrpl });
+        return rows.Select(MapToEntity).ToList();
+    }
+
+    public async Task<Account?> GetByExternalAddressAsync(string address, CancellationToken ct = default)
+    {
+        var connection = await GetConnectionAsync(ct);
+        var sql = $"SELECT * FROM {TableName} WHERE ExternalAddress = @Address COLLATE NOCASE";
+        var row = await connection.QueryFirstOrDefaultAsync(sql, new { Address = address });
+        return row is null ? null : MapToEntity(row);
+    }
+
     private static Account MapToEntity(dynamic row)
     {
-        var account = Account.Create(
-            (string)row.Name,
-            (AccountType)(int)row.Type,
-            new Money((decimal)row.Balance, (string)row.Currency),
-            row.IsOnBudget == 1
-        );
+        var accountType = (AccountType)(int)row.Type;
+
+        Account account;
+        if (accountType == AccountType.ExternalXrpl && row.ExternalAddress is not null)
+        {
+            // Recreate XRPL account
+            account = Account.CreateXrplAccount(
+                (string)row.Name,
+                (string)row.ExternalAddress,
+                (string?)row.ExternalNetwork ?? "mainnet"
+            );
+        }
+        else
+        {
+            account = Account.Create(
+                (string)row.Name,
+                accountType,
+                new Money((decimal)row.Balance, (string)row.Currency),
+                row.IsOnBudget == 1
+            );
+        }
 
         // Use reflection to set private properties (for rehydration from DB)
         var type = typeof(Account);
         type.GetProperty("Id")!.SetValue(account, ToGuid((string)row.Id));
+        type.GetProperty("Balance")!.SetValue(account, new Money((decimal)row.Balance, (string)row.Currency));
         type.GetProperty("ClearedBalance")!.SetValue(account, new Money((decimal)row.ClearedBalance, (string)row.Currency));
         type.GetProperty("UnclearedBalance")!.SetValue(account, new Money((decimal)row.UnclearedBalance, (string)row.Currency));
         type.GetProperty("IsActive")!.SetValue(account, row.IsActive == 1);
+        type.GetProperty("IsOnBudget")!.SetValue(account, row.IsOnBudget == 1);
         type.GetProperty("SortOrder")!.SetValue(account, (int)row.SortOrder);
         type.GetProperty("Note")!.SetValue(account, (string?)row.Note);
         type.GetProperty("LastReconciledAt")!.SetValue(account, ToNullableDateTime((string?)row.LastReconciledAt));
         type.GetProperty("CreatedAt")!.SetValue(account, ToDateTime((string)row.CreatedAt));
         type.GetProperty("UpdatedAt")!.SetValue(account, ToDateTime((string)row.UpdatedAt));
+
+        // XRPL-specific properties
+        type.GetProperty("ExternalAddress")!.SetValue(account, (string?)row.ExternalAddress);
+        type.GetProperty("ExternalNetwork")!.SetValue(account, (string?)row.ExternalNetwork);
+        type.GetProperty("LastExternalSyncAt")!.SetValue(account, ToNullableDateTime((string?)row.LastExternalSyncAt));
+        type.GetProperty("ExternalReserveDrops")!.SetValue(account, (long?)row.ExternalReserveDrops);
 
         return account;
     }

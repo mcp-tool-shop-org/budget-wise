@@ -102,12 +102,42 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private string _editEnvelopeColor = string.Empty;
 
+    // ========== XRPL ==========
+
+    [ObservableProperty]
+    private IReadOnlyList<XrplAccountRow> _xrplAccounts = Array.Empty<XrplAccountRow>();
+
+    // New XRPL address form
+    [ObservableProperty]
+    private string _newXrplName = string.Empty;
+
+    [ObservableProperty]
+    private string _newXrplAddress = string.Empty;
+
+    [ObservableProperty]
+    private string _newXrplNetwork = "mainnet";
+
+    // XRPL status
+    [ObservableProperty]
+    private string _xrplStatusMessage = "Not checked yet";
+
+    [ObservableProperty]
+    private string _xrplStatusIcon = "\uE946"; // Info icon
+
+    [ObservableProperty]
+    private string _xrplStatusColor = "Gray";
+
+    public IReadOnlyList<string> XrplNetworks { get; } = new[] { "mainnet", "testnet" };
+
     // ========== Computed ==========
 
     public bool HasClosedAccounts => ClosedAccounts.Count > 0;
     public bool HasArchivedEnvelopes => ArchivedEnvelopes.Count > 0;
 
-    public IReadOnlyList<AccountType> AccountTypes { get; } = Enum.GetValues<AccountType>();
+    // Filter out ExternalXrpl from regular account types (use XRPL tab instead)
+    public IReadOnlyList<AccountType> AccountTypes { get; } = Enum.GetValues<AccountType>()
+        .Where(t => t != AccountType.ExternalXrpl)
+        .ToArray();
 
     public string[] PredefinedColors { get; } = new[]
     {
@@ -166,6 +196,21 @@ public sealed partial class SettingsViewModel : ObservableObject
 
             // Load group names for autocomplete
             GroupNames = await _engine.GetEnvelopeGroupNamesAsync();
+
+            // Load XRPL accounts
+            var xrplAccounts = await _engine.GetXrplAccountsAsync();
+            XrplAccounts = xrplAccounts
+                .Select(a => new XrplAccountRow(
+                    a.Id,
+                    a.Name,
+                    a.BalanceText,
+                    a.ExternalAddress,
+                    a.ExternalNetwork,
+                    a.LastExternalSyncAt,
+                    a.ExternalReserveDrops,
+                    a.ReserveXrp,
+                    a.SpendableXrpBalance))
+                .ToArray();
 
             OnPropertyChanged(nameof(HasClosedAccounts));
             OnPropertyChanged(nameof(HasArchivedEnvelopes));
@@ -412,6 +457,104 @@ public sealed partial class SettingsViewModel : ObservableObject
         }
     }
 
+    // ========== XRPL Commands ==========
+
+    [RelayCommand]
+    private async Task TrackXrplAddressAsync()
+    {
+        if (string.IsNullOrWhiteSpace(NewXrplName))
+        {
+            _notifications.ShowWarning("Name required", "Please enter a display name for this address.");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(NewXrplAddress))
+        {
+            _notifications.ShowWarning("Address required", "Please enter an XRPL r-address.");
+            return;
+        }
+
+        try
+        {
+            await _engine.TrackXrplAddressAsync(new TrackXrplAddressRequest
+            {
+                Name = NewXrplName.Trim(),
+                Address = NewXrplAddress.Trim(),
+                Network = NewXrplNetwork
+            });
+
+            _notifications.ShowSuccess("Address tracked", $"Now tracking '{NewXrplName}' on XRPL {NewXrplNetwork}.");
+
+            // Reset form
+            NewXrplName = string.Empty;
+            NewXrplAddress = string.Empty;
+            NewXrplNetwork = "mainnet";
+
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            _notifications.ShowError("Couldn't track address", ex.Message);
+        }
+    }
+
+    [RelayCommand]
+    private async Task RefreshXrplStatusAsync()
+    {
+        try
+        {
+            XrplStatusMessage = "Checking connection...";
+            XrplStatusIcon = "\uE895"; // Sync icon
+            XrplStatusColor = "Gray";
+
+            var status = await _engine.GetXrplNetworkStatusAsync();
+
+            if (status.IsConnected)
+            {
+                XrplStatusMessage = $"Connected to XRPL. Validated ledger: {status.ValidatedLedgerIndex:N0}";
+                XrplStatusIcon = "\uE8FB"; // Checkmark
+                XrplStatusColor = "Green";
+            }
+            else
+            {
+                XrplStatusMessage = status.ErrorMessage ?? "Unable to connect to XRPL.";
+                XrplStatusIcon = "\uE783"; // Warning
+                XrplStatusColor = "Orange";
+            }
+        }
+        catch (Exception ex)
+        {
+            XrplStatusMessage = $"Error: {ex.Message}";
+            XrplStatusIcon = "\uE711"; // Error
+            XrplStatusColor = "Red";
+        }
+    }
+
+    [RelayCommand]
+    private async Task SyncXrplAccountAsync(XrplAccountRow account)
+    {
+        try
+        {
+            _notifications.ShowInfo("Syncing...", $"Fetching balance for {account.Name}");
+
+            var result = await _engine.SyncXrplAccountAsync(account.Id);
+
+            if (result.Success)
+            {
+                _notifications.ShowSuccess("Synced", $"{account.Name}: {result.BalanceXrp:N6} XRP");
+                await LoadAsync();
+            }
+            else
+            {
+                _notifications.ShowWarning("Sync failed", result.ErrorMessage ?? "Unknown error");
+            }
+        }
+        catch (Exception ex)
+        {
+            _notifications.ShowError("Sync error", ex.Message);
+        }
+    }
+
     // ========== Row Models ==========
 
     public sealed record AccountRow(
@@ -430,4 +573,15 @@ public sealed partial class SettingsViewModel : ObservableObject
         string Color,
         bool IsActive,
         bool IsHidden);
+
+    public sealed record XrplAccountRow(
+        Guid Id,
+        string Name,
+        string BalanceText,
+        string? ExternalAddress,
+        string? ExternalNetwork,
+        DateTime? LastExternalSyncAt,
+        long? ExternalReserveDrops,
+        decimal? ReserveXrp,
+        decimal? SpendableXrpBalance);
 }

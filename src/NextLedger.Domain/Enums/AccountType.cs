@@ -23,6 +23,12 @@ public enum AccountType
     /// <summary>Investment or brokerage account.</summary>
     Investment = 5,
 
+    /// <summary>
+    /// External ledger account (XRPL). Read-only, externally reconciled.
+    /// NextLedger observes but never controls this account.
+    /// </summary>
+    ExternalXrpl = 10,
+
     /// <summary>Other/miscellaneous account type.</summary>
     Other = 99
 }

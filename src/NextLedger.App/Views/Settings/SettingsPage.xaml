@@ -109,6 +109,95 @@
                 </ScrollViewer>
             </PivotItem>
 
+            <!-- XRPL Tab -->
+            <PivotItem Header="XRPL">
+                <ScrollViewer Padding="0,16,0,0">
+                    <StackPanel Spacing="24">
+                        <!-- XRPL Explanation Banner -->
+                        <InfoBar IsOpen="True" IsClosable="False" Severity="Informational"
+                                 Title="External Ledger Tracking"
+                                 Message="Track XRPL addresses to view on-chain balances. NextLedger is read-only and non-custodial — it cannot send or sign transactions." />
+
+                        <!-- Track New XRPL Address Form -->
+                        <StackPanel Spacing="12">
+                            <TextBlock Text="Track XRPL Address" Style="{StaticResource SubtitleTextBlockStyle}" />
+                            <Grid ColumnDefinitions="*,180,120,Auto" ColumnSpacing="12">
+                                <TextBox PlaceholderText="Display name" Text="{Binding NewXrplName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBox Grid.Column="1" PlaceholderText="r-address (rXXX...)" Text="{Binding NewXrplAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                <ComboBox Grid.Column="2" ItemsSource="{Binding XrplNetworks}" SelectedItem="{Binding NewXrplNetwork, Mode=TwoWay}"
+                                          HorizontalAlignment="Stretch" />
+                                <Button Grid.Column="3" Content="Track" Command="{Binding TrackXrplAddressCommand}" Style="{StaticResource AccentButtonStyle}" />
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- XRPL Network Status -->
+                        <StackPanel Spacing="8">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <TextBlock Text="Network Status" Style="{StaticResource SubtitleTextBlockStyle}" VerticalAlignment="Center" />
+                                <Button Content="Refresh" Command="{Binding RefreshXrplStatusCommand}" Padding="8,4" />
+                            </StackPanel>
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" Padding="12,8"
+                                  Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" CornerRadius="6">
+                                <FontIcon Glyph="{Binding XrplStatusIcon}" FontSize="16" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1" Text="{Binding XrplStatusMessage}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- Tracked XRPL Accounts -->
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Tracked Addresses" Style="{StaticResource SubtitleTextBlockStyle}" />
+                            <InfoBar IsOpen="True" IsClosable="False" Severity="Informational"
+                                     Title="No addresses tracked" Message="Add an XRPL r-address above to start tracking."
+                                     Visibility="{Binding XrplAccounts, Converter={StaticResource CollectionEmptyToVisibilityConverter}}" />
+
+                            <ListView ItemsSource="{Binding XrplAccounts}" SelectionMode="None">
+                                <ListView.ItemContainerStyle>
+                                    <Style TargetType="ListViewItem">
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Setter Property="Padding" Value="0" />
+                                        <Setter Property="Margin" Value="0,4" />
+                                    </Style>
+                                </ListView.ItemContainerStyle>
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid ColumnDefinitions="*,Auto,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="4" Padding="12,10"
+                                              Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" CornerRadius="6">
+                                            <!-- Row 0: Name + Balance + Sync -->
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="15" />
+                                            <TextBlock Grid.Column="1" Text="{Binding BalanceText}" FontWeight="SemiBold" FontSize="15"
+                                                       VerticalAlignment="Center" HorizontalAlignment="Right" />
+                                            <Button Grid.Column="2" Content="Sync" Padding="8,4"
+                                                    Command="{Binding DataContext.SyncXrplAccountCommand, ElementName=RootGrid}"
+                                                    CommandParameter="{Binding}"
+                                                    ToolTipService.ToolTip="Fetch latest balance from XRPL" />
+
+                                            <!-- Row 1: Address + Network -->
+                                            <StackPanel Grid.Row="1" Grid.ColumnSpan="3" Orientation="Horizontal" Spacing="8">
+                                                <TextBlock Text="{Binding ExternalAddress}" FontSize="12" Opacity="0.7" FontFamily="Consolas" />
+                                                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" Padding="6,2" CornerRadius="4">
+                                                    <TextBlock Text="{Binding ExternalNetwork}" FontSize="11" Opacity="0.8" />
+                                                </Border>
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </StackPanel>
+
+                        <!-- Reserve Explanation -->
+                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" Padding="16">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Understanding XRP Reserve" FontWeight="SemiBold" />
+                                <TextBlock TextWrapping="Wrap" FontSize="13" Opacity="0.9"
+                                           Text="XRPL requires each account to maintain a minimum reserve. This reserve is not spendable and helps prevent ledger spam." />
+                                <TextBlock FontSize="12" Opacity="0.7" Text="• Base reserve: 10 XRP (required to activate account)" />
+                                <TextBlock FontSize="12" Opacity="0.7" Text="• Owner reserve: 2 XRP per owned object (trust lines, offers, etc.)" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </PivotItem>
+
             <!-- Envelopes Tab -->
             <PivotItem Header="Envelopes">
                 <ScrollViewer Padding="0,16,0,0">

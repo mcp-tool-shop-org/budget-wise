@@ -741,6 +741,43 @@ public sealed class BudgetEngine : IBudgetEngine
     public Task UnarchiveEnvelopeAsync(Guid envelopeId, CancellationToken ct = default)
         => _envelopeService.UnarchiveEnvelopeAsync(envelopeId, ct);
 
+    // --- XRPL External Ledger (Phase 7 - Observation Layer) ---
+    // NOTE: These methods require IXrplClient to be injected. For now, they delegate
+    // to AccountService. Full XRPL integration requires DI changes.
+
+    public Task<Account> TrackXrplAddressAsync(TrackXrplAddressRequest request, CancellationToken ct = default)
+        => _accountService.TrackXrplAddressAsync(request, ct);
+
+    public Task<IReadOnlyList<AccountDto>> GetXrplAccountsAsync(CancellationToken ct = default)
+        => _accountService.GetXrplAccountsAsync(ct);
+
+    public Task<XrplAccountInfoResult> SyncXrplAccountAsync(Guid accountId, CancellationToken ct = default)
+    {
+        // This requires IXrplClient - will be implemented when we have DI access.
+        // For now, return a "not connected" result.
+        return Task.FromResult(XrplAccountInfoResult.Fail(
+            accountId.ToString(),
+            "XRPL sync requires configuration. Set NextLedger_WEB3_RPC_URL environment variable."));
+    }
+
+    public Task<XrplNetworkStatus> GetXrplNetworkStatusAsync(CancellationToken ct = default)
+    {
+        // This requires IXrplClient - will be implemented when we have DI access.
+        return Task.FromResult(XrplNetworkStatus.Disconnected(
+            "XRPL not configured. Set NextLedger_WEB3_RPC_URL environment variable."));
+    }
+
+    public Task<XrplReserveInfo> GetXrplReserveInfoAsync(int ownerCount, CancellationToken ct = default)
+    {
+        // Return default reserve info (10 XRP base + 2 XRP per owner)
+        return Task.FromResult(new XrplReserveInfo
+        {
+            BaseReserveDrops = 10_000_000,
+            OwnerReserveDrops = 2_000_000,
+            OwnerCount = ownerCount
+        });
+    }
+
     // --- Private helpers ---
 
     private async Task<TransactionDto> MapTransactionToDtoAsync(Transaction tx, CancellationToken ct)

@@ -121,4 +121,32 @@ public interface IBudgetEngine
     Task ArchiveEnvelopeAsync(Guid envelopeId, CancellationToken ct = default);
 
     Task UnarchiveEnvelopeAsync(Guid envelopeId, CancellationToken ct = default);
+
+    // --- XRPL External Ledger (Phase 7 - Observation Layer) ---
+
+    /// <summary>
+    /// Tracks an XRPL address as a read-only external account.
+    /// NextLedger observes this account but cannot execute transactions.
+    /// </summary>
+    Task<Domain.Entities.Account> TrackXrplAddressAsync(TrackXrplAddressRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets all active XRPL external ledger accounts.
+    /// </summary>
+    Task<IReadOnlyList<AccountDto>> GetXrplAccountsAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Syncs an XRPL account balance from the on-chain state.
+    /// </summary>
+    Task<XrplAccountInfoResult> SyncXrplAccountAsync(Guid accountId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets the current XRPL network status and connectivity.
+    /// </summary>
+    Task<XrplNetworkStatus> GetXrplNetworkStatusAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Calculates the reserve requirement for an XRPL account.
+    /// </summary>
+    Task<XrplReserveInfo> GetXrplReserveInfoAsync(int ownerCount, CancellationToken ct = default);
 }

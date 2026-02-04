@@ -79,6 +79,7 @@ public sealed class SqliteConnectionFactory : IDisposable
         }
 
         await EnsureTransactionsSoftDeleteSupportAsync(connection, ct);
+        await EnsureXrplColumnsSupportAsync(connection, ct);
     }
 
     private static async Task EnsureTransactionsSoftDeleteSupportAsync(SqliteConnection connection, CancellationToken ct)
@@ -112,6 +113,51 @@ public sealed class SqliteConnectionFactory : IDisposable
         await using (var index = connection.CreateCommand())
         {
             index.CommandText = "CREATE INDEX IF NOT EXISTS IX_Transactions_IsDeleted ON Transactions(IsDeleted);";
+            await index.ExecuteNonQueryAsync(ct);
+        }
+    }
+
+    /// <summary>
+    /// Ensures XRPL columns exist on Accounts table (migration for existing databases).
+    /// </summary>
+    private static async Task EnsureXrplColumnsSupportAsync(SqliteConnection connection, CancellationToken ct)
+    {
+        // Check which columns already exist
+        var existingColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        await using (var pragma = connection.CreateCommand())
+        {
+            pragma.CommandText = "PRAGMA table_info(Accounts);";
+            await using var reader = await pragma.ExecuteReaderAsync(ct);
+            while (await reader.ReadAsync(ct))
+            {
+                existingColumns.Add(reader.GetString(1));
+            }
+        }
+
+        // Add XRPL columns if they don't exist
+        var xrplColumns = new[]
+        {
+            ("ExternalAddress", "TEXT"),
+            ("ExternalNetwork", "TEXT"),
+            ("LastExternalSyncAt", "TEXT"),
+            ("ExternalReserveDrops", "INTEGER")
+        };
+
+        foreach (var (columnName, columnType) in xrplColumns)
+        {
+            if (!existingColumns.Contains(columnName))
+            {
+                await using var alter = connection.CreateCommand();
+                alter.CommandText = $"ALTER TABLE Accounts ADD COLUMN {columnName} {columnType};";
+                await alter.ExecuteNonQueryAsync(ct);
+            }
+        }
+
+        // Add index for external accounts
+        await using (var index = connection.CreateCommand())
+        {
+            index.CommandText = "CREATE INDEX IF NOT EXISTS IX_Accounts_ExternalAddress ON Accounts(ExternalAddress);";
             await index.ExecuteNonQueryAsync(ct);
         }
     }

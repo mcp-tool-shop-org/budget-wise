@@ -313,6 +313,42 @@ public sealed class AccountService
         return accounts.Where(a => !a.IsActive).Select(MapToDto).ToList();
     }
 
+    // --- XRPL External Ledger Methods ---
+
+    /// <summary>
+    /// Track an XRPL address as a read-only external account.
+    /// NextLedger observes this account but cannot execute transactions.
+    /// </summary>
+    public async Task<Account> TrackXrplAddressAsync(TrackXrplAddressRequest request, CancellationToken ct = default)
+    {
+        if (request is null)
+            throw new ArgumentNullException(nameof(request));
+
+        // Check if address is already tracked
+        var existing = await _unitOfWork.Accounts.GetByExternalAddressAsync(request.Address, ct);
+        if (existing is not null)
+            throw new InvalidOperationException($"XRPL address {request.Address} is already being tracked as '{existing.Name}'.");
+
+        // Check for duplicate name
+        var existingName = await _unitOfWork.Accounts.GetByNameAsync(request.Name, ct);
+        if (existingName is not null)
+            throw new InvalidOperationException($"Account with name '{request.Name}' already exists.");
+
+        var account = Account.CreateXrplAccount(request.Name, request.Address, request.Network);
+        await _unitOfWork.Accounts.AddAsync(account, ct);
+
+        return account;
+    }
+
+    /// <summary>
+    /// Get all active XRPL external ledger accounts.
+    /// </summary>
+    public async Task<IReadOnlyList<AccountDto>> GetXrplAccountsAsync(CancellationToken ct = default)
+    {
+        var accounts = await _unitOfWork.Accounts.GetXrplAccountsAsync(ct);
+        return accounts.Select(MapToDto).ToList();
+    }
+
     private static AccountDto MapToDto(Account account) => new()
     {
         Id = account.Id,
@@ -323,6 +359,11 @@ public sealed class AccountService
         UnclearedBalance = account.UnclearedBalance,
         IsActive = account.IsActive,
         IsOnBudget = account.IsOnBudget,
-        LastReconciledAt = account.LastReconciledAt
+        LastReconciledAt = account.LastReconciledAt,
+        // XRPL-specific fields
+        ExternalAddress = account.ExternalAddress,
+        ExternalNetwork = account.ExternalNetwork,
+        LastExternalSyncAt = account.LastExternalSyncAt,
+        ExternalReserveDrops = account.ExternalReserveDrops
     };
 }

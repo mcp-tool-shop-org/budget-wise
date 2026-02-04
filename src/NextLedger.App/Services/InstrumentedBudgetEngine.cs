@@ -203,6 +203,33 @@ public sealed class InstrumentedBudgetEngine : IBudgetEngine
             operation: "UnarchiveEnvelope",
             action: async () => { await _inner.UnarchiveEnvelopeAsync(envelopeId, ct); return true; });
 
+    // --- XRPL External Ledger (Phase 7) ---
+
+    public Task<Account> TrackXrplAddressAsync(TrackXrplAddressRequest request, CancellationToken ct = default)
+        => MeasureAsync(
+            operation: "TrackXrplAddress",
+            action: () => _inner.TrackXrplAddressAsync(request, ct));
+
+    public Task<IReadOnlyList<AccountDto>> GetXrplAccountsAsync(CancellationToken ct = default)
+        => MeasureAsync(
+            operation: "GetXrplAccounts",
+            action: () => _inner.GetXrplAccountsAsync(ct));
+
+    public Task<XrplAccountInfoResult> SyncXrplAccountAsync(Guid accountId, CancellationToken ct = default)
+        => MeasureAsync(
+            operation: "SyncXrplAccount",
+            action: () => _inner.SyncXrplAccountAsync(accountId, ct));
+
+    public Task<XrplNetworkStatus> GetXrplNetworkStatusAsync(CancellationToken ct = default)
+        => MeasureAsync(
+            operation: "GetXrplNetworkStatus",
+            action: () => _inner.GetXrplNetworkStatusAsync(ct));
+
+    public Task<XrplReserveInfo> GetXrplReserveInfoAsync(int ownerCount, CancellationToken ct = default)
+        => MeasureAsync(
+            operation: "GetXrplReserveInfo",
+            action: () => _inner.GetXrplReserveInfoAsync(ownerCount, ct));
+
     private async Task<T> MeasureAsync<T>(string operation, Func<Task<T>> action)
     {
         var stopwatch = Stopwatch.StartNew();
