@@ -127,7 +127,8 @@ public sealed class BudgetPeriodRepository : BaseRepository<BudgetPeriod>, IBudg
 
         // Check for carryover from previous period
         var prevPeriod = await GetPreviousPeriodAsync(year, month, ct);
-        var carryover = prevPeriod?.Remaining ?? Money.Zero;
+        // Carry forward unassigned cash only; envelope balances roll forward via EnvelopeAllocation.RolloverFromPrevious.
+        var carryover = prevPeriod?.ReadyToAssign ?? Money.Zero;
 
         var newPeriod = BudgetPeriod.Create(year, month, carryover);
         await AddAsync(newPeriod, ct);

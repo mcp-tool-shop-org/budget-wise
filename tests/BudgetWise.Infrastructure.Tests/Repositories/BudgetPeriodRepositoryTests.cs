@@ -114,6 +114,50 @@ public class BudgetPeriodRepositoryTests : IDisposable
     }
 
     [Fact]
+    public async Task GetOrCreateAsync_CarriesOverReadyToAssign_NotRemaining()
+    {
+        // Arrange: Previous period has zero ReadyToAssign, but has envelope surplus (Remaining > 0)
+        // If we carried Remaining, we'd double-count because envelope balances roll via RolloverFromPrevious.
+        var prevYear = 2026;
+        var prevMonth = 1;
+
+        var prevPeriod = BudgetPeriod.Create(prevYear, prevMonth, Money.Zero);
+        await _repository.AddAsync(prevPeriod);
+
+        // Income 100, allocate 100 => ReadyToAssign should be 0
+        // Spend 50 => Remaining would be 50
+        prevPeriod.UpdateIncome(new Money(100m));
+        prevPeriod.UpdateAllocated(new Money(100m));
+        prevPeriod.UpdateSpent(new Money(50m));
+        await _repository.UpdateAsync(prevPeriod);
+
+        // Act
+        var next = await _repository.GetOrCreateAsync(2026, 2);
+
+        // Assert
+        next.CarriedOver.Should().Be(Money.Zero);
+    }
+
+    [Fact]
+    public async Task GetOrCreateAsync_CarriesOverUnassignedMoney_FromReadyToAssign()
+    {
+        var prevYear = 2026;
+        var prevMonth = 3;
+
+        var prevPeriod = BudgetPeriod.Create(prevYear, prevMonth, Money.Zero);
+        await _repository.AddAsync(prevPeriod);
+
+        // Income 100, allocate 40 => ReadyToAssign should be 60
+        prevPeriod.UpdateIncome(new Money(100m));
+        prevPeriod.UpdateAllocated(new Money(40m));
+        await _repository.UpdateAsync(prevPeriod);
+
+        var next = await _repository.GetOrCreateAsync(2026, 4);
+
+        next.CarriedOver.Should().Be(new Money(60m));
+    }
+
+    [Fact]
     public async Task UpdateAsync_UpdatesPeriod()
     {
         var period = BudgetPeriod.Create(2024, 10);

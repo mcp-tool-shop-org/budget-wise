@@ -176,6 +176,7 @@ public class EnvelopeValidationTests
 {
     private readonly MoveMoneyRequestValidator _moveValidator = new();
     private readonly AllocateToEnvelopeRequestValidator _allocateValidator = new();
+    private readonly AdjustEnvelopeAllocationRequestValidator _adjustValidator = new();
 
     [Fact]
     public void ValidAllocation_Passes()
@@ -232,6 +233,34 @@ public class EnvelopeValidationTests
         };
 
         var result = _moveValidator.Validate(request);
+
+        result.IsValid.Should().BeFalse();
+    }
+
+    [Fact]
+    public void NegativeAdjustment_Passes()
+    {
+        var request = new AdjustEnvelopeAllocationRequest
+        {
+            EnvelopeId = Guid.NewGuid(),
+            Delta = new Money(-25m)
+        };
+
+        var result = _adjustValidator.Validate(request);
+
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ZeroAdjustment_Fails()
+    {
+        var request = new AdjustEnvelopeAllocationRequest
+        {
+            EnvelopeId = Guid.NewGuid(),
+            Delta = Money.Zero
+        };
+
+        var result = _adjustValidator.Validate(request);
 
         result.IsValid.Should().BeFalse();
     }

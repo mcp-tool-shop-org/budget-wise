@@ -1,6 +1,7 @@
 using BudgetWise.Application.DTOs;
 using BudgetWise.Application.Interfaces;
 using BudgetWise.Domain.Entities;
+using BudgetWise.Domain.Services;
 using BudgetWise.Domain.ValueObjects;
 
 namespace BudgetWise.Application.Services;
@@ -96,14 +97,27 @@ public sealed class EnvelopeService
             ?? throw new InvalidOperationException($"Envelope {envelopeId} not found.");
 
         var period = await _unitOfWork.BudgetPeriods.GetOrCreateAsync(year, month, ct);
+        if (period.IsClosed)
+            throw new InvalidOperationException("Cannot modify closed budget period.");
         var allocation = await _unitOfWork.EnvelopeAllocations.GetOrCreateAsync(envelopeId, period.Id, ct);
+
+        // Guardrail: only allow increasing allocations up to ReadyToAssign.
+        var delta = amount - allocation.Allocated;
+        if (delta.IsPositive)
+        {
+            var currentTotalAllocated = await _unitOfWork.EnvelopeAllocations.GetTotalAllocatedForPeriodAsync(period.Id, ct);
+            var readyToAssign = BudgetMath.ComputeReadyToAssign(period.TotalIncome, period.CarriedOver, currentTotalAllocated);
+
+            if (delta > readyToAssign)
+                throw new InvalidOperationException($"Insufficient ReadyToAssign. Available: {readyToAssign.ToFormattedString()}");
+        }
 
         allocation.SetAllocation(amount);
         await _unitOfWork.EnvelopeAllocations.UpdateAsync(allocation, ct);
 
         // Update period totals
-        var totalAllocated = await _unitOfWork.EnvelopeAllocations.GetTotalAllocatedForPeriodAsync(period.Id, ct);
-        period.UpdateAllocated(totalAllocated);
+        var updatedTotalAllocated = await _unitOfWork.EnvelopeAllocations.GetTotalAllocatedForPeriodAsync(period.Id, ct);
+        period.UpdateAllocated(updatedTotalAllocated);
         await _unitOfWork.BudgetPeriods.UpdateAsync(period, ct);
 
         return allocation;
@@ -120,14 +134,26 @@ public sealed class EnvelopeService
         CancellationToken ct = default)
     {
         var period = await _unitOfWork.BudgetPeriods.GetOrCreateAsync(year, month, ct);
+        if (period.IsClosed)
+            throw new InvalidOperationException("Cannot modify closed budget period.");
         var allocation = await _unitOfWork.EnvelopeAllocations.GetOrCreateAsync(envelopeId, period.Id, ct);
+
+        // Guardrail: allow decreases, but block increases above ReadyToAssign.
+        if (amount.IsPositive)
+        {
+            var currentTotalAllocated = await _unitOfWork.EnvelopeAllocations.GetTotalAllocatedForPeriodAsync(period.Id, ct);
+            var readyToAssign = BudgetMath.ComputeReadyToAssign(period.TotalIncome, period.CarriedOver, currentTotalAllocated);
+
+            if (amount > readyToAssign)
+                throw new InvalidOperationException($"Insufficient ReadyToAssign. Available: {readyToAssign.ToFormattedString()}");
+        }
 
         allocation.AddToAllocation(amount);
         await _unitOfWork.EnvelopeAllocations.UpdateAsync(allocation, ct);
 
         // Update period totals
-        var totalAllocated = await _unitOfWork.EnvelopeAllocations.GetTotalAllocatedForPeriodAsync(period.Id, ct);
-        period.UpdateAllocated(totalAllocated);
+        var updatedTotalAllocated = await _unitOfWork.EnvelopeAllocations.GetTotalAllocatedForPeriodAsync(period.Id, ct);
+        period.UpdateAllocated(updatedTotalAllocated);
         await _unitOfWork.BudgetPeriods.UpdateAsync(period, ct);
 
         return allocation;
@@ -151,6 +177,8 @@ public sealed class EnvelopeService
             throw new ArgumentException("Cannot move money to the same envelope.");
 
         var period = await _unitOfWork.BudgetPeriods.GetOrCreateAsync(year, month, ct);
+        if (period.IsClosed)
+            throw new InvalidOperationException("Cannot modify closed budget period.");
 
         var fromAllocation = await _unitOfWork.EnvelopeAllocations.GetOrCreateAsync(fromEnvelopeId, period.Id, ct);
         var toAllocation = await _unitOfWork.EnvelopeAllocations.GetOrCreateAsync(toEnvelopeId, period.Id, ct);
@@ -180,6 +208,9 @@ public sealed class EnvelopeService
     {
         var currentPeriod = await _unitOfWork.BudgetPeriods.GetByYearMonthAsync(fromYear, fromMonth, ct)
             ?? throw new InvalidOperationException($"Budget period {fromYear}-{fromMonth} not found.");
+
+        if (currentPeriod.IsClosed)
+            throw new InvalidOperationException("Cannot rollover a closed budget period.");
 
         var nextMonth = fromMonth == 12 ? 1 : fromMonth + 1;
         var nextYear = fromMonth == 12 ? fromYear + 1 : fromYear;
@@ -241,6 +272,8 @@ public sealed class EnvelopeService
         {
             Year = year,
             Month = month,
+            IsClosed = period.IsClosed,
+            CarriedOver = period.CarriedOver,
             TotalIncome = period.TotalIncome,
             TotalAllocated = totalAllocated,
             TotalSpent = totalSpent,

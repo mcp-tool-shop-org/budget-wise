@@ -34,6 +34,20 @@ public sealed class MoveMoneyRequestValidator : AbstractValidator<MoveMoneyReque
     }
 }
 
+public sealed class AdjustEnvelopeAllocationRequestValidator : AbstractValidator<AdjustEnvelopeAllocationRequest>
+{
+    public AdjustEnvelopeAllocationRequestValidator()
+    {
+        RuleFor(x => x.EnvelopeId)
+            .NotEmpty().WithMessage("Envelope is required.");
+
+        // Delta can be positive (increase) or negative (decrease), but not zero.
+        RuleFor(x => x.Delta)
+            .Must(m => !m.IsZero).WithMessage("Delta must be non-zero.")
+            .Must(m => Math.Abs(m.Amount) <= 999_999_999.99m).WithMessage("Amount is too large.");
+    }
+}
+
 /// <summary>
 /// Validates envelope creation input.
 /// </summary>
@@ -92,14 +106,4 @@ public sealed class SetGoalRequestValidator : AbstractValidator<SetGoalRequest>
                 .WithMessage("Target date is too far in the future.");
         });
     }
-}
-
-/// <summary>
-/// Request to set a goal (for validation).
-/// </summary>
-public sealed record SetGoalRequest
-{
-    public required Guid EnvelopeId { get; init; }
-    public required Money Amount { get; init; }
-    public DateOnly? TargetDate { get; init; }
 }
