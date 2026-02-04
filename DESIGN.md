@@ -6,6 +6,22 @@ A Windows-first personal finance app that brings the proven envelope budgeting m
 
 ---
 
+## Current Status (Feb 2026)
+
+- The deterministic core and budget engine orchestration are in place (Phase 2).
+- Phase 3 focuses on exposing this functionality through a UI that treats the engine contract as the source of truth.
+
+Key Phase 3 guardrails:
+- UI must consume `BudgetSnapshotDto` as-is (no UI-layer math for totals/availability).
+- UI actions must be performed exclusively through `IBudgetEngine`.
+- Engine errors must be mapped from stable error codes (not exception strings).
+
+References:
+- Phase 3 checklist: [PHASE3_CHECKLIST.md](PHASE3_CHECKLIST.md)
+- Engine error codes: [ENGINE_ERROR_CODES.md](ENGINE_ERROR_CODES.md)
+
+---
+
 ## Research Summary
 
 ### Market Analysis
