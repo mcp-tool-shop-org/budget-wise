@@ -6,7 +6,7 @@ If you believe you have found a security vulnerability in NextLedger, please do 
 
 Instead, report it privately:
 
-- Email: security@localhost (replace with a real address before public release)
+- Email: 64996768+mcp-tool-shop@users.noreply.github.com (subject: "NextLedger Security")
 - Or use GitHub Security Advisories if enabled for the repository
 
 Include:

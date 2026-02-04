@@ -63,18 +63,23 @@
                         <StackPanel Spacing="12">
                             <TextBlock Text="Add Account" Style="{StaticResource SubtitleTextBlockStyle}" />
                             <Grid ColumnDefinitions="*,140,120,100,Auto" ColumnSpacing="12" RowDefinitions="Auto,Auto" RowSpacing="8">
-                                <TextBox PlaceholderText="Account name" Text="{Binding NewAccountName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBox PlaceholderText="Account name" Text="{Binding NewAccountName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         AutomationProperties.Name="New account name" />
                                 <ComboBox Grid.Column="1" ItemsSource="{Binding AccountTypes}" SelectedItem="{Binding NewAccountType, Mode=TwoWay}"
-                                          HorizontalAlignment="Stretch">
+                                          HorizontalAlignment="Stretch"
+                                          AutomationProperties.Name="Account type">
                                     <ComboBox.ItemTemplate>
                                         <DataTemplate>
                                             <TextBlock Text="{Binding}" />
                                         </DataTemplate>
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
-                                <TextBox Grid.Column="2" PlaceholderText="Balance" Text="{Binding NewAccountBalance, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                <CheckBox Grid.Column="3" Content="On Budget" IsChecked="{Binding NewAccountOnBudget, Mode=TwoWay}" VerticalAlignment="Center" />
-                                <Button Grid.Column="4" Content="Add" Command="{Binding CreateAccountCommand}" Style="{StaticResource AccentButtonStyle}" />
+                                <TextBox Grid.Column="2" PlaceholderText="Balance" Text="{Binding NewAccountBalance, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         AutomationProperties.Name="Initial account balance" />
+                                <CheckBox Grid.Column="3" Content="On Budget" IsChecked="{Binding NewAccountOnBudget, Mode=TwoWay}" VerticalAlignment="Center"
+                                          AutomationProperties.Name="Account is on budget" />
+                                <Button Grid.Column="4" Content="Add" Command="{Binding CreateAccountCommand}" Style="{StaticResource AccentButtonStyle}"
+                                        AutomationProperties.Name="Add account" />
                             </Grid>
                         </StackPanel>
 
@@ -163,11 +168,15 @@
                         <StackPanel Spacing="12">
                             <TextBlock Text="Track XRPL Address" Style="{StaticResource SubtitleTextBlockStyle}" />
                             <Grid ColumnDefinitions="*,180,120,Auto" ColumnSpacing="12">
-                                <TextBox PlaceholderText="Display name" Text="{Binding NewXrplName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                <TextBox Grid.Column="1" PlaceholderText="r-address (rXXX...)" Text="{Binding NewXrplAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBox PlaceholderText="Display name" Text="{Binding NewXrplName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         AutomationProperties.Name="XRPL address display name" />
+                                <TextBox Grid.Column="1" PlaceholderText="r-address (rXXX...)" Text="{Binding NewXrplAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         AutomationProperties.Name="XRPL r-address" />
                                 <ComboBox Grid.Column="2" ItemsSource="{Binding XrplNetworks}" SelectedItem="{Binding NewXrplNetwork, Mode=TwoWay}"
-                                          HorizontalAlignment="Stretch" />
-                                <Button Grid.Column="3" Content="Track" Command="{Binding TrackXrplAddressCommand}" Style="{StaticResource AccentButtonStyle}" />
+                                          HorizontalAlignment="Stretch"
+                                          AutomationProperties.Name="XRPL network" />
+                                <Button Grid.Column="3" Content="Track" Command="{Binding TrackXrplAddressCommand}" Style="{StaticResource AccentButtonStyle}"
+                                        AutomationProperties.Name="Track XRPL address" />
                             </Grid>
                         </StackPanel>
 
@@ -175,7 +184,8 @@
                         <StackPanel Spacing="8">
                             <StackPanel Orientation="Horizontal" Spacing="12">
                                 <TextBlock Text="Network Status" Style="{StaticResource SubtitleTextBlockStyle}" VerticalAlignment="Center" />
-                                <Button Content="Refresh" Command="{Binding RefreshXrplStatusCommand}" Padding="8,4" />
+                                <Button Content="Refresh" Command="{Binding RefreshXrplStatusCommand}" Padding="8,4"
+                                        AutomationProperties.Name="Refresh XRPL network status" />
                             </StackPanel>
                             <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" Padding="12,8"
                                   Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" CornerRadius="6">
@@ -328,21 +338,24 @@
                                     <TextBlock Text="Destination Address *" FontSize="12" Opacity="0.7" />
                                     <TextBox PlaceholderText="r-address (rXXX...)"
                                              Text="{Binding TransferDestinationAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                             FontFamily="Consolas" />
+                                             FontFamily="Consolas"
+                                             AutomationProperties.Name="Transfer destination address" />
                                 </StackPanel>
 
                                 <!-- Amount -->
                                 <StackPanel Spacing="4">
                                     <TextBlock Text="Amount (XRP) *" FontSize="12" Opacity="0.7" />
                                     <TextBox PlaceholderText="0.000000"
-                                             Text="{Binding TransferAmountXrp, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                             Text="{Binding TransferAmountXrp, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             AutomationProperties.Name="Transfer amount in XRP" />
                                 </StackPanel>
 
                                 <!-- Destination Tag (optional) -->
                                 <StackPanel Spacing="4">
                                     <TextBlock Text="Destination Tag (optional — required for exchanges)" FontSize="12" Opacity="0.7" />
                                     <TextBox PlaceholderText="e.g., 12345"
-                                             Text="{Binding TransferDestinationTag, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                             Text="{Binding TransferDestinationTag, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             AutomationProperties.Name="Destination tag for exchanges" />
                                 </StackPanel>
 
                                 <!-- User Note (optional) -->
@@ -350,12 +363,14 @@
                                     <TextBlock Text="Your Note (optional — stored locally)" FontSize="12" Opacity="0.7" />
                                     <TextBox PlaceholderText="Why are you making this transfer?"
                                              Text="{Binding TransferUserNote, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                             TextWrapping="Wrap" AcceptsReturn="True" Height="60" />
+                                             TextWrapping="Wrap" AcceptsReturn="True" Height="60"
+                                             AutomationProperties.Name="Transfer note" />
                                 </StackPanel>
 
                                 <!-- Validate Button -->
                                 <Button Content="Preview Transfer" Command="{Binding ValidateTransferIntentCommand}"
-                                        Style="{StaticResource AccentButtonStyle}" HorizontalAlignment="Stretch" />
+                                        Style="{StaticResource AccentButtonStyle}" HorizontalAlignment="Stretch"
+                                        AutomationProperties.Name="Preview transfer plan" />
 
                                 <!-- ========== Validation Preview (Future Ledger) ========== -->
                                 <Border Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" CornerRadius="6" Padding="16"
@@ -403,10 +418,13 @@
                                             <Button Content="Approve Plan" Command="{Binding ApproveIntentCommand}"
                                                     Style="{StaticResource AccentButtonStyle}"
                                                     IsEnabled="{Binding IntentIsValid}"
+                                                    AutomationProperties.Name="Approve transfer plan"
                                                     ToolTipService.ToolTip="Save this plan. Execute it externally in your wallet." />
                                             <Button Grid.Column="1" Content="Export" Command="{Binding ExportExecutionPlanCommand}"
+                                                    AutomationProperties.Name="Export execution plan to clipboard"
                                                     ToolTipService.ToolTip="Copy execution details to clipboard for your wallet." />
-                                            <Button Grid.Column="2" Content="Cancel" Command="{Binding CancelTransferIntentCommand}" />
+                                            <Button Grid.Column="2" Content="Cancel" Command="{Binding CancelTransferIntentCommand}"
+                                                    AutomationProperties.Name="Cancel transfer plan" />
                                         </Grid>
 
                                         <!-- Reminder -->
@@ -422,6 +440,7 @@
 
                                 <!-- Cancel (when no validation yet) -->
                                 <Button Content="Cancel" Command="{Binding CancelTransferIntentCommand}" HorizontalAlignment="Right"
+                                        AutomationProperties.Name="Cancel transfer plan"
                                         Visibility="{Binding HasIntentValidation, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
                             </StackPanel>
                         </Border>
@@ -436,7 +455,8 @@
                                         <TextBlock Text="Audit trail of your XRPL transfer plans — never executed by NextLedger."
                                                    FontSize="12" Opacity="0.7" />
                                     </StackPanel>
-                                    <Button Grid.Column="1" Content="Refresh" Command="{Binding LoadIntentHistoryCommand}" Padding="8,4" />
+                                    <Button Grid.Column="1" Content="Refresh" Command="{Binding LoadIntentHistoryCommand}" Padding="8,4"
+                                            AutomationProperties.Name="Refresh intent history" />
                                 </Grid>
 
                                 <!-- Loading -->
@@ -517,17 +537,21 @@
                         <StackPanel Spacing="12">
                             <TextBlock Text="Add Envelope" Style="{StaticResource SubtitleTextBlockStyle}" />
                             <Grid ColumnDefinitions="*,160,Auto,Auto" ColumnSpacing="12">
-                                <TextBox PlaceholderText="Envelope name" Text="{Binding NewEnvelopeName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBox PlaceholderText="Envelope name" Text="{Binding NewEnvelopeName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         AutomationProperties.Name="New envelope name" />
                                 <AutoSuggestBox Grid.Column="1" PlaceholderText="Group (optional)" Text="{Binding NewEnvelopeGroup, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                ItemsSource="{Binding GroupNames}" />
-                                <ComboBox Grid.Column="2" ItemsSource="{Binding PredefinedColors}" SelectedItem="{Binding NewEnvelopeColor, Mode=TwoWay}" Width="80">
+                                                ItemsSource="{Binding GroupNames}"
+                                                AutomationProperties.Name="Envelope group" />
+                                <ComboBox Grid.Column="2" ItemsSource="{Binding PredefinedColors}" SelectedItem="{Binding NewEnvelopeColor, Mode=TwoWay}" Width="80"
+                                          AutomationProperties.Name="Envelope color">
                                     <ComboBox.ItemTemplate>
                                         <DataTemplate>
                                             <Border Width="40" Height="20" CornerRadius="4" Background="{Binding}" />
                                         </DataTemplate>
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
-                                <Button Grid.Column="3" Content="Add" Command="{Binding CreateEnvelopeCommand}" Style="{StaticResource AccentButtonStyle}" />
+                                <Button Grid.Column="3" Content="Add" Command="{Binding CreateEnvelopeCommand}" Style="{StaticResource AccentButtonStyle}"
+                                        AutomationProperties.Name="Add envelope" />
                             </Grid>
                         </StackPanel>
 
@@ -615,8 +639,10 @@
                        CloseButtonCommand="{Binding CancelEditAccountCommand}"
                        DefaultButton="Primary">
             <StackPanel Spacing="16" MinWidth="320">
-                <TextBox Header="Name" Text="{Binding EditAccountName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                <CheckBox Content="On Budget" IsChecked="{Binding EditAccountOnBudget, Mode=TwoWay}" />
+                <TextBox Header="Name" Text="{Binding EditAccountName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         AutomationProperties.Name="Account name" />
+                <CheckBox Content="On Budget" IsChecked="{Binding EditAccountOnBudget, Mode=TwoWay}"
+                          AutomationProperties.Name="Account is on budget" />
             </StackPanel>
         </ContentDialog>
 
@@ -629,10 +655,13 @@
                        CloseButtonCommand="{Binding CancelEditEnvelopeCommand}"
                        DefaultButton="Primary">
             <StackPanel Spacing="16" MinWidth="320">
-                <TextBox Header="Name" Text="{Binding EditEnvelopeName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBox Header="Name" Text="{Binding EditEnvelopeName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         AutomationProperties.Name="Envelope name" />
                 <AutoSuggestBox Header="Group" Text="{Binding EditEnvelopeGroup, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                ItemsSource="{Binding GroupNames}" PlaceholderText="(none)" />
-                <ComboBox Header="Color" ItemsSource="{Binding PredefinedColors}" SelectedItem="{Binding EditEnvelopeColor, Mode=TwoWay}">
+                                ItemsSource="{Binding GroupNames}" PlaceholderText="(none)"
+                                AutomationProperties.Name="Envelope group" />
+                <ComboBox Header="Color" ItemsSource="{Binding PredefinedColors}" SelectedItem="{Binding EditEnvelopeColor, Mode=TwoWay}"
+                          AutomationProperties.Name="Envelope color">
                     <ComboBox.ItemTemplate>
                         <DataTemplate>
                             <Border Width="60" Height="24" CornerRadius="4" Background="{Binding}" />

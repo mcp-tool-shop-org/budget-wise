@@ -31,16 +31,21 @@
                       SelectedItem="{Binding SelectedAccount, Mode=TwoWay}"
                       DisplayMemberPath="Name"
                       PlaceholderText="Select account"
+                      AutomationProperties.Name="Import target account"
                       ToolTipService.ToolTip="The account these transactions belong to." />
 
             <CheckBox Content="Has header row" IsChecked="{Binding HasHeaderRow, Mode=TwoWay}"
+                      AutomationProperties.Name="CSV has header row"
                       ToolTipService.ToolTip="Check if your CSV's first row contains column names like Date, Payee, Amount." />
 
             <Button Content="Pick CSV…" Click="PickCsv_Click"
+                    AutomationProperties.Name="Pick CSV file"
                     ToolTipService.ToolTip="Open a file picker to load a CSV file from your computer." />
             <Button Content="Preview" Command="{Binding PreviewCommand}"
+                    AutomationProperties.Name="Preview CSV import"
                     ToolTipService.ToolTip="Parse the CSV and show what will be imported. Duplicates are automatically detected." />
             <Button Content="Import selected" Click="ImportSelected_Click"
+                    AutomationProperties.Name="Import selected rows"
                     ToolTipService.ToolTip="Add the selected rows to your account. Only 'New' rows will be imported." />
         </StackPanel>
 
@@ -50,7 +55,9 @@
                      AcceptsReturn="True"
                      TextWrapping="NoWrap"
                      FontFamily="Consolas"
-                     Height="160" />
+                     Height="160"
+                     AutomationProperties.Name="CSV content input"
+                     AutomationProperties.HelpText="Paste your CSV data here, or use Pick CSV to load a file" />
         </StackPanel>
 
         <StackPanel Grid.Row="3" Spacing="8">
@@ -67,8 +74,10 @@
 
             <StackPanel Orientation="Horizontal" Spacing="8">
                 <Button Content="Select new" Command="{Binding SelectAllNewCommand}"
+                        AutomationProperties.Name="Select all new transactions"
                         ToolTipService.ToolTip="Select only transactions that aren't already in your account." />
                 <Button Content="Select none" Command="{Binding SelectNoneCommand}"
+                        AutomationProperties.Name="Deselect all transactions"
                         ToolTipService.ToolTip="Deselect all rows." />
             </StackPanel>
 

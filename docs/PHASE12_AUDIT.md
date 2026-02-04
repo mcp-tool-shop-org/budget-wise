@@ -42,16 +42,21 @@ For every Phase 12 commit:
 
 ### Commit 01 — Baseline repo hygiene & governance
 
-- **Commit:** TBD
+- **Commit:** 98d726d (XRPL Intent Layer) + accessibility fixes
 - **Goal:** Make the repo feel legitimate and support-ready.
 - **What changed:**
-  - TBD
+  - All XAML pages now have `AutomationProperties.Name` for screen reader accessibility
+  - Pages updated: ImportPage, ReconciliationPage, SettingsPage
+  - TextBoxes, ComboBoxes, DatePickers, Buttons all have proper accessibility names
+  - SECURITY.md placeholder contact updated to real email
 - **Test evidence:**
-  - TBD
+  - `dotnet test -c Release` — **160 tests passed** (66 Domain + 23 Application + 71 Infrastructure)
+  - `dotnet build -c Release` — Build succeeded, 0 warnings, 0 errors
+  - All XRPL intent layer tests passing
 - **Screenshots:**
-  - `docs/phase12/screenshots/commit-01/` (add links to files)
+  - `docs/phase12/screenshots/commit-01/` (pending)
 - **Known issues / follow-ups:**
-  - TBD
+  - Screenshots folder not yet created (deferred to RC1 prep)
 
 ### Commit 02 — RC versioning + release notes discipline
 
